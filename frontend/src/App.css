@@ -36,3 +36,28 @@
     transform: rotate(360deg);
   }
 }
+
+/* RegisterTutor styles */
+.register-root { max-width: 900px; margin: 24px auto; font-family: Arial, Helvetica, sans-serif; }
+.wizard { display:flex; gap:16px; margin-bottom:16px; }
+.wizard .step { padding:12px 18px; border-radius:8px; background:#e9eef8; color:#333; text-align:center; width:100px }
+.wizard .step.active { background:#0b63a8; color:#fff }
+.card { background:#fff; border:1px solid #d6e3f2; padding:20px; border-radius:8px; box-shadow:0 2px 6px rgba(0,0,0,0.03); }
+.subject-row { display:flex; gap:8px; align-items:center; margin-top:8px }
+.subject-row input { flex:1; padding:10px; border:1px solid #cfdde9; border-radius:4px }
+.icon-arrow { background:#0b63a8; color:#fff; border:none; padding:8px 12px; border-radius:4px; cursor:pointer; font-size:14px }
+.subject-dropdown { position:absolute; top:100%; left:0; right:0; background:#fff; border:1px solid #cfdde9; border-top:none; border-radius:0 0 4px 4px; max-height:200px; overflow-y:auto; z-index:10 }
+.dropdown-item { padding:10px; cursor:pointer; border-bottom:1px solid #f0f0f0 }
+.dropdown-item:hover { background:#f0f6fb }
+.actions { margin-top:18px; display:flex; gap:8px }
+.btn { padding:8px 14px; border-radius:6px; border:1px solid #a9c3da; background:#f0f6fb; cursor:pointer }
+.btn-primary { background:#0b63a8; color:#fff; border: none }
+.tutor-list { display:flex; flex-direction:column; gap:10px; margin-top:10px }
+.tutor-card { display:flex; gap:12px; align-items:center; border:1px dashed #e0edf7; padding:10px; border-radius:6px }
+.tutor-avatar { width:48px; height:48px; background:#0b63a8; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold }
+.tutor-info { flex:1 }
+.tutor-name { font-weight:600 }
+.confirm-box { border:1px solid #e6f0fb; padding:12px; border-radius:6px; background:#f9fcff }
+.note { color:#666; font-size:14px }
+.success { text-align:center }
+
