@@ -29,22 +29,22 @@ public class SchedulingAPI {
 
     @PostMapping("/appointments")
     public boolean book(@RequestBody AppointmentRequest req) {
-        return service.book(req);
+        return service.bookAppointment(req);
     }
 
     @PostMapping("/appointments/{id}/approve")
     public boolean approve(@PathVariable Long id, @RequestBody ApproveRequest req) {
-        return service.approve(id, req);
+        return service.approveAppointment(id, req);
     }
 
     @PostMapping("/appointments/{id}/reject")
     public boolean reject(@PathVariable Long id, @RequestBody ApproveRequest req) {
-        return service.reject(id, req);
+        return service.rejectAppointment(id, req);
     }
 
     @PostMapping("/meetings/{id}/cancel")
     public boolean cancel(@PathVariable Long id, @RequestBody CancelRequest req) {
-        return service.cancel(id, req);
+        return service.cancelAppointment(id, req);
     }
 
     @GetMapping("/meetings")

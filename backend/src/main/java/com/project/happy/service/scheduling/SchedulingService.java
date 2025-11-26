@@ -9,23 +9,23 @@ import com.project.happy.dto.scheduling.AppointmentRequest;
 import com.project.happy.dto.scheduling.ApproveRequest;
 import com.project.happy.dto.scheduling.CancelRequest;
 import com.project.happy.entity.Meeting;
-import com.project.happy.repository.IStudentSchedulingRepository;
-import com.project.happy.repository.ITutorSchedulingRepository;
+import com.project.happy.repository.IMeetingRepository;
+
 
 @Service
 public class SchedulingService {
 
-    private final IStudentSchedulingRepository studentRepo;
-    private final ITutorSchedulingRepository tutorRepo;
+    private final IMeetingRepository studentRepo;
+
 
     public SchedulingService(
-            IStudentSchedulingRepository studentRepo,
+            IMeetingRepository studentRepo,
             ITutorSchedulingRepository tutorRepo) {
         this.studentRepo = studentRepo;
         this.tutorRepo = tutorRepo;
     }
 
-    public boolean book(AppointmentRequest request) {
+    public boolean bookAppointment(AppointmentRequest request) {
 
         return studentRepo.bookAppointment(
                 request.getStudentId(),
@@ -35,21 +35,21 @@ public class SchedulingService {
                 request.getTopic());
     }
 
-    public boolean approve(Long apptId, ApproveRequest req) {
+    public boolean approveAppointment(Long apptId, ApproveRequest req) {
 
         return tutorRepo.approveAppointment(
                 apptId,
                 req.getTutorId());
     }
 
-    public boolean reject(Long apptId, ApproveRequest req) {
+    public boolean rejectAppointment(Long apptId, ApproveRequest req) {
 
         return tutorRepo.rejectAppointment(
                 apptId,
                 req.getTutorId());
     }
 
-    public boolean cancel(Long meetingId, CancelRequest req) {
+    public boolean cancelAppointment(Long meetingId, CancelRequest req) {
 
 
     boolean studentResult = studentRepo.cancelMeeting(

@@ -2,25 +2,27 @@ package com.project.happy.entity;
 
 import java.time.LocalDateTime;
 
+
 public abstract class Meeting {
 
-    protected Long meetingId;
-    protected Long tutorId;
-    protected LocalDateTime date;
-    protected LocalDateTime startTime;
-    protected LocalDateTime endTime;
-    protected String topic;
-    protected String cancellationReason;
-    protected boolean cancelled;
-    protected MeetingType type;
-    protected MeetingStatus status;
+    private Long meetingId;
+    private Long tutorId;
+    
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private String topic;
+    private String cancellationReason;
+    private boolean cancelled;
+    private String onlineLink;
+    private MeetingType type;
+    private MeetingStatus status;
 
-    // Constructor
-    public Meeting(Long meetingId, Long tutorId, LocalDateTime date, LocalDateTime startTime,
-                   LocalDateTime endTime, String topic, MeetingType type) {
+    public Meeting(Long meetingId, Long tutorId, LocalDateTime date,
+                   LocalDateTime startTime, LocalDateTime endTime,
+                   String topic, MeetingType type) {
         this.meetingId = meetingId;
         this.tutorId = tutorId;
-        this.date = date;
+        
         this.startTime = startTime;
         this.endTime = endTime;
         this.topic = topic;
@@ -29,8 +31,7 @@ public abstract class Meeting {
         this.cancelled = false;
     }
 
-    // Core Methods
-    public boolean cancel(Long userId, String reason) {
+    public boolean cancel(String reason) {
         if (this.status == MeetingStatus.COMPLETED || this.cancelled) return false;
         this.cancelled = true;
         this.cancellationReason = reason;
@@ -44,24 +45,26 @@ public abstract class Meeting {
         else if (now.isAfter(startTime)) status = MeetingStatus.ONGOING;
         else status = MeetingStatus.SCHEDULED;
     }
-
-    public boolean overlapsWith(Meeting other) {
-        return this.tutorId.equals(other.tutorId)
-            && !this.endTime.isBefore(other.startTime)
-            && !this.startTime.isAfter(other.endTime);
-    }
+    
+    public boolean overlapsWith(LocalDateTime otherStart, LocalDateTime otherEnd) {
+    // Không trùng => false
+    return !this.endTime.isBefore(otherStart) && !this.startTime.isAfter(otherEnd);
+}
 
     // Getters & Setters
     public Long getMeetingId() { return meetingId; }
     public Long getTutorId() { return tutorId; }
-    public LocalDateTime getDate() { return date; }
+    
     public LocalDateTime getStartTime() { return startTime; }
     public LocalDateTime getEndTime() { return endTime; }
     public String getTopic() { return topic; }
     public boolean isCancelled() { return cancelled; }
-    public MeetingStatus getStatus() { return status; }
-    public MeetingType getType() { return type; }
     public String getCancellationReason() { return cancellationReason; }
+    public String getOnlineLink() { return onlineLink; }
+    public MeetingType getType() { return type; }
+    public MeetingStatus getStatus() { return status; }
 
     public void setTopic(String topic) { this.topic = topic; }
+    public void setOnlineLink(String onlineLink) { this.onlineLink = onlineLink; }
+    public void setStatus(MeetingStatus status) { this.status = status; }
 }
