@@ -8,18 +8,22 @@ import java.util.List;
 public interface IMeetingRepository {
 
     // Basic CRUD-like operations
-    Meeting findById(int meetingId);
+    Meeting findById(Long meetingId);
     void save(Meeting meeting);
     void update(Meeting meeting);
 
     // Tutor-specific queries
-    List<Appointment> findPendingAppointmentsByTutor(int tutorId);
-    List<Appointment> findApprovedAppointmentsByTutor(int tutorId);
+    List<Appointment> findPendingAppointmentsByTutor(Long tutorId);
+    List<Appointment> findApprovedAppointmentsByTutor(Long tutorId);
+    List<Appointment> findOfficialAppointmentsByTutor(Long tutorId);
 
     // Student-specific queries
-    List<Appointment> findAllAppointmentsByStudent(int studentId);    // all appointments, any status
-    List<Appointment> findApprovedAppointmentsByStudent(int studentId);
+    List<Appointment> findAllAppointmentsByStudent(Long studentId);    // all appointments, any status
+    List<Appointment> findApprovedAppointmentsByStudent(Long studentId);
+    List<Appointment> findOfficialAppointmentsByStudent(Long studentId);
 
     // Common / Helper
-    List<Meeting> findCancellableMeetings(int userId);               // meetings that can be cancelled
+    List<Appointment> findCancellableAppointmentsByTutor(Long tutorId);
+    List<Appointment> findCancellableAppointmentsByStudent(Long studentId);
+    
 }

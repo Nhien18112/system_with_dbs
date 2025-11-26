@@ -1,15 +1,21 @@
 package com.project.happy.entity;
 
 import java.time.LocalDateTime;
+
 public class Appointment extends Meeting {
 
     private Long studentId;
     private AppointmentStatus appointmentStatus;
 
-    public Appointment(Long meetingId, Long tutorId, Long studentId,
-                       LocalDateTime date, LocalDateTime startTime,
-                       LocalDateTime endTime, String topic) {
-        super(meetingId, tutorId, date, startTime, endTime, topic, MeetingType.APPOINTMENT);
+    public Appointment(Long meetingId,
+                       Long tutorId,
+                       Long studentId,
+                       LocalDateTime startTime,
+                       LocalDateTime endTime,
+                       String topic) {
+
+        super(meetingId, tutorId, startTime, endTime, topic, MeetingType.APPOINTMENT);
+
         this.studentId = studentId;
         this.appointmentStatus = AppointmentStatus.PENDING;
     }

@@ -1,31 +1,36 @@
 package com.project.happy.service.scheduling;
 
+import java.time.LocalDate;
+
 import com.project.happy.entity.Appointment;
 import com.project.happy.entity.Meeting;
-//import com.project.happy.util.AvailableSlot;
-
+import com.project.happy.entity.TutorSlot;
+import com.project.happy.dto.freeslot.FreeSlotResponse;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import org.hibernate.loader.ast.spi.Loadable;
 
 public interface IStudentSchedulingService {
 
     // ---------------- Appointment Operations ----------------
 
-    boolean bookAppointment(int studentId, int tutorId, LocalDateTime date, LocalDateTime startTime, String topic);
+    boolean bookAppointment(Long studentId, Long tutorId, LocalDateTime date, LocalDateTime startTime, LocalDateTime endTime, String topic);
 
-    List<Appointment> findApprovedAppointments(int studentId);
+    List<Appointment> findApprovedAppointments(Long studentId);
 
-    List<Appointment> viewAppointmentHistory(int studentId);
+    List<Appointment> viewAppointmentHistory(Long studentId);
 
-    boolean cancelMeeting(int studentId, int meetingId, String reason);
+    boolean cancelMeeting(Long meetingId, String reason);
 
     // ---------------- Helper / Optional ----------------
 
-    List<Meeting> findCancellableMeetings(int studentId);
+    List<Appointment> findCancellableAppointmentByStudent(Long studentId);
 
-    //List<AvailableSlot> viewTutorAvailableSlots(int tutorId);
+    List<FreeSlotResponse> viewTutorAvailableSlots(Long tutorId);
 
-    boolean checkTutorSlotAvailability(int tutorId, LocalDateTime date, LocalDateTime start, LocalDateTime end);
+    //boolean checkTutorSlotAvailability(int tutorId, LocalDateTime date, LocalDateTime start, LocalDateTime end);
 
-    Meeting viewMeetingDetails(int meetingId);
+    Meeting viewMeetingDetails(Long meetingId);
+
 }

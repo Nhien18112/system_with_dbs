@@ -6,27 +6,26 @@ import com.project.happy.entity.Meeting;
 import java.time.LocalDateTime;
 import java.util.List;
 
+
 public interface ITutorSchedulingService {
 
-    // Tutor operations
-    List<Appointment> viewPendingAppointments(int tutorId);
+    List<Appointment> viewPendingAppointments(Long tutorId);
 
-    String approveAppointment(int appointmentId, int tutorId);  // trả về onlineLink nếu online
+    String approveAppointment(Long appointmentId, Long tutorId);
 
-    boolean rejectAppointment(int appointmentId, int tutorId);
+    boolean rejectAppointment(Long appointmentId, Long tutorId);
 
-    List<Appointment> viewApprovedAppointments(int tutorId);
+    List<Appointment> viewApprovedAppointments(Long tutorId);
 
-    boolean cancelMeeting(int tutorId, int meetingId, String reason);
+    boolean cancelMeeting(Long tutorId, Long meetingId, String reason);
 
-    // Optional / helper
-    List<Appointment> findPendingAppointmentsByTutor(int tutorId);
+    List<Appointment> findPendingAppointmentsByTutor(Long tutorId);
 
-    List<Appointment> findApprovedAppointmentsByTutor(int tutorId);
+    List<Appointment> findApprovedAppointmentsByTutor(Long tutorId);
 
-    boolean validateScheduleConflict(int tutorId, LocalDateTime start, LocalDateTime end);
+    //boolean validateScheduleConflict(Long tutorId, LocalDateTime start, LocalDateTime end);
 
-    Meeting viewMeetingDetails(int meetingId);
+    Meeting viewMeetingDetails(Long meetingId);
 
     String createOnlineLink(Appointment appointment);
 }

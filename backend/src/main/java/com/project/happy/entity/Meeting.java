@@ -17,18 +17,19 @@ public abstract class Meeting {
     private MeetingType type;
     private MeetingStatus status;
 
-    public Meeting(Long meetingId, Long tutorId, LocalDateTime date,
-                   LocalDateTime startTime, LocalDateTime endTime,
-                   String topic, MeetingType type) {
+    public Meeting(Long meetingId,Long tutorId,LocalDateTime startTime,LocalDateTime endTime,String topic,MeetingType type) {
+
         this.meetingId = meetingId;
         this.tutorId = tutorId;
-        
         this.startTime = startTime;
         this.endTime = endTime;
         this.topic = topic;
         this.type = type;
+
         this.status = MeetingStatus.SCHEDULED;
         this.cancelled = false;
+        this.cancellationReason = null;
+        this.onlineLink = null;
     }
 
     public boolean cancel(String reason) {
@@ -45,11 +46,6 @@ public abstract class Meeting {
         else if (now.isAfter(startTime)) status = MeetingStatus.ONGOING;
         else status = MeetingStatus.SCHEDULED;
     }
-    
-    public boolean overlapsWith(LocalDateTime otherStart, LocalDateTime otherEnd) {
-    // Không trùng => false
-    return !this.endTime.isBefore(otherStart) && !this.startTime.isAfter(otherEnd);
-}
 
     // Getters & Setters
     public Long getMeetingId() { return meetingId; }

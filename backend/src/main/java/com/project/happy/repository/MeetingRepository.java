@@ -1,6 +1,8 @@
 package com.project.happy.repository;
 
 import com.project.happy.entity.Appointment;
+import com.project.happy.entity.AppointmentStatus;
+import com.project.happy.entity.MeetingStatus;
 import com.project.happy.entity.Meeting;
 
 import java.util.ArrayList;
@@ -14,9 +16,9 @@ public class MeetingRepository implements IMeetingRepository {
     private List<Meeting> meetings = new ArrayList<>();
 
     @Override
-    public Meeting findById(int meetingId) {
+    public Meeting findById(Long meetingId) {
         return meetings.stream()
-                .filter(m -> m.getMeetingId().intValue() == meetingId)
+                .filter(m -> m.getMeetingId() != null && m.getMeetingId().equals(meetingId))
                 .findFirst()
                 .orElse(null);
     }
@@ -28,59 +30,90 @@ public class MeetingRepository implements IMeetingRepository {
 
     @Override
     public void update(Meeting meeting) {
-        // đơn giản: remove + add lại (hoặc thay thế theo ID)
         for (int i = 0; i < meetings.size(); i++) {
-            if (meetings.get(i).getMeetingId().equals(meeting.getMeetingId())) {
+            Meeting m = meetings.get(i);
+            if (m.getMeetingId() != null && m.getMeetingId().equals(meeting.getMeetingId())) {
                 meetings.set(i, meeting);
                 return;
             }
         }
+        // Nếu không tìm thấy → ném exception
+        throw new IllegalArgumentException("Meeting with ID " + meeting.getMeetingId() + " not found");
     }
 
+    // =====================
     // Tutor-specific queries
+    // =====================
     @Override
-    public List<Appointment> findPendingAppointmentsByTutor(int tutorId) {
+    public List<Appointment> findPendingAppointmentsByTutor(Long tutorId) {
         return meetings.stream()
                 .filter(m -> m instanceof Appointment)
                 .map(m -> (Appointment) m)
-                .filter(a -> a.getTutorId() == tutorId && a.getAppointmentStatus() == Appointment.AppointmentStatus.PENDING)
+                .filter(a -> a.getTutorId().equals(tutorId) && a.getAppointmentStatus() == AppointmentStatus.PENDING)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Appointment> findApprovedAppointmentsByTutor(int tutorId) {
+    public List<Appointment> findApprovedAppointmentsByTutor(Long tutorId) {
         return meetings.stream()
                 .filter(m -> m instanceof Appointment)
                 .map(m -> (Appointment) m)
-                .filter(a -> a.getTutorId() == tutorId && a.getAppointmentStatus() == Appointment.AppointmentStatus.APPROVED)
+                .filter(a -> a.getTutorId().equals(tutorId) && a.getAppointmentStatus() == AppointmentStatus.APPROVED)
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<Appointment> findOfficialAppointmentsByTutor(Long tutorId) {
+        // Tận dụng hàm findApprovedAppointmentsByTutor
+        return findApprovedAppointmentsByTutor(tutorId).stream()
+                .filter(a -> !a.isCancelled()) // chỉ lấy những buổi chưa hủy
+                .collect(Collectors.toList());
+    }
+
+    // =====================
     // Student-specific queries
+    // =====================
     @Override
-    public List<Appointment> findAllAppointmentsByStudent(int studentId) {
+    public List<Appointment> findAllAppointmentsByStudent(Long studentId) {
         return meetings.stream()
                 .filter(m -> m instanceof Appointment)
                 .map(m -> (Appointment) m)
-                .filter(a -> a.getStudentId() == studentId)
+                .filter(a -> a.getStudentId().equals(studentId))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<Appointment> findApprovedAppointmentsByStudent(int studentId) {
+    public List<Appointment> findApprovedAppointmentsByStudent(Long studentId) {
         return meetings.stream()
                 .filter(m -> m instanceof Appointment)
                 .map(m -> (Appointment) m)
-                .filter(a -> a.getStudentId() == studentId && a.getAppointmentStatus() == Appointment.AppointmentStatus.APPROVED)
+                .filter(a -> a.getStudentId().equals(studentId)
+                        && a.getAppointmentStatus() == AppointmentStatus.APPROVED)
                 .collect(Collectors.toList());
     }
 
-    // Common / Helper
     @Override
-    public List<Meeting> findCancellableMeetings(int userId) {
-        return meetings.stream()
-                .filter(m -> !m.isCancelled())
-                .filter(m -> m.getTutorId() == userId || (m instanceof Appointment && ((Appointment) m).getStudentId() == userId))
+    public List<Appointment> findOfficialAppointmentsByStudent(Long studentId) {
+        return findApprovedAppointmentsByStudent(studentId).stream()
+                .filter(a -> !a.isCancelled()) // chỉ lấy buổi chưa hủy
                 .collect(Collectors.toList());
     }
+
+    // =====================
+    // Cancellable meetings (tách Tutor / Student)
+    // =====================
+    @Override
+    public List<Appointment> findCancellableAppointmentsByTutor(Long tutorId) {
+        return findOfficialAppointmentsByTutor(tutorId).stream() // tận dụng hàm official
+                .filter(a -> a.getStatus() == MeetingStatus.SCHEDULED) // chỉ lấy Scheduled
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Appointment> findCancellableAppointmentsByStudent(Long studentId) {
+        return findOfficialAppointmentsByStudent(studentId).stream() // tận dụng hàm official
+                .filter(a -> a.getStatus() == com.project.happy.entity.MeetingStatus.SCHEDULED) // chỉ Scheduled
+                .collect(Collectors.toList());
+    }
+
 }

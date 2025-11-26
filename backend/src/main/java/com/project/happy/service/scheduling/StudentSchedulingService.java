@@ -1,51 +1,52 @@
 package com.project.happy.service.scheduling;
 
+import com.project.happy.dto.freeslot.FreeSlotResponse;
 import com.project.happy.entity.Appointment;
 import com.project.happy.entity.Meeting;
+import com.project.happy.entity.TutorSlot;
 import com.project.happy.service.scheduling.IStudentSchedulingService;
 import com.project.happy.repository.MeetingRepository;
-
+import com.project.happy.repository.FreeSlotRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-//import com.project.happy.util.AvailableSlot;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.Comparator;
+import java.util.Map;
+
+
+import com.project.happy.service.freeslot.FreeSlotService;
 
 @Service
 public class StudentSchedulingService implements IStudentSchedulingService {
 
     @Autowired
-    private  MeetingRepository meetingRepo;
-    //private final AvailableSlotService slotService;
+    private MeetingRepository meetingRepo;
+    private final FreeSlotRepository slotRepo;
 
-    public StudentSchedulingService(MeetingRepository meetingRepo/*, AvailableSlotService slotService*/) {
+    public StudentSchedulingService(MeetingRepository meetingRepo, FreeSlotRepository slotRepo) {
         this.meetingRepo = meetingRepo;
-        //this.slotService = slotService;
+        this.slotRepo = slotRepo;
     }
-        
 
-   
-    /* 
-     @Override
-    public boolean bookAppointment(int studentId, int tutorId, LocalDateTime date, LocalDateTime startTime, String topic) {
-        // Kiểm tra slot tutor có trống không
-        if (!slotService.checkTutorSlotAvailability(tutorId, date, startTime, startTime.plusHours(1))) {
-            return false;
-        }
+    @Override
+    public boolean bookAppointment(Long studentId, Long tutorId, LocalDateTime date, LocalDateTime startTime,
+            LocalDateTime endTime,
+            String topic) {
 
-        // Tạo Appointment mới
-        Appointment appointment = new Appointment();
-        appointment.setStudentId(studentId);
-        appointment.setTutorId(tutorId);
-        appointment.setDate(date.toLocalDate());
-        appointment.setStartTime(date.toLocalTime());
-        appointment.setEndTime(startTime.plusHours(1).toLocalTime()); // Giả sử 1 giờ
-        appointment.setTopic(topic);
-        appointment.setAppointmentStatus(Appointment.AppointmentStatus.PENDING);
+        Appointment appointment = new Appointment(
+                System.currentTimeMillis(),
+                tutorId,
+                studentId,
+                startTime,
+                endTime,
+                topic);
 
         // Lưu vào repo
         meetingRepo.save(appointment);
@@ -53,44 +54,101 @@ public class StudentSchedulingService implements IStudentSchedulingService {
     }
 
     @Override
-    public List<Appointment> findApprovedAppointments(int studentId) {
+    public List<Appointment> findApprovedAppointments(Long studentId) {
         return meetingRepo.findApprovedAppointmentsByStudent(studentId);
     }
 
     @Override
-    public List<Appointment> viewAppointmentHistory(int studentId) {
+    public List<Appointment> viewAppointmentHistory(Long studentId) {
         return meetingRepo.findAllAppointmentsByStudent(studentId);
     }
 
     @Override
-    public boolean cancelMeeting(int studentId, int meetingId, String reason) {
+    public boolean cancelMeeting(Long meetingId, String reason) {
         Meeting meeting = meetingRepo.findById(meetingId);
-        if (meeting == null || meeting.isCancelled() || meeting.getTutorId() == null) {
+        if (meeting == null || meeting.isCancelled()) {
             return false;
         }
 
-        meeting.cancel(studentId, reason);
-        meetingRepo.update(meeting);
-        return true;
-    }
-        */
-    @Override
-    public List<Meeting> findCancellableMeetings(int studentId) {
-        return meetingRepo.findCancellableMeetings(studentId);
-    }
-    /* 
-    @Override
-    public List<AvailableSlot> viewTutorAvailableSlots(int tutorId) {
-        return slotService.getAvailableSlots(tutorId);
+        boolean ok = meeting.cancel(reason);
+
+        if (ok) {
+            meetingRepo.update(meeting);
+        }
+
+        return ok;
     }
 
     @Override
-    public boolean checkTutorSlotAvailability(int tutorId, LocalDateTime date, LocalDateTime start, LocalDateTime end) {
-        return slotService.checkTutorSlotAvailability(tutorId, date, start, end);
+    public List<Appointment> findCancellableAppointmentByStudent(Long studentId) {
+        return meetingRepo.findCancellableAppointmentsByStudent(studentId);
     }
-*/
+
     @Override
-    public Meeting viewMeetingDetails(int meetingId) {
+    public List<FreeSlotResponse> viewTutorAvailableSlots(Long tutorId) {
+
+        LocalDate today = LocalDate.now();
+        int currentMonth = today.getMonthValue();
+        int currentYear = today.getYear();
+
+        // Lấy slot tháng này
+        List<TutorSlot> thisMonth = slotRepo.findByTutorIdAndDateBetween(
+                (long) tutorId, currentMonth, currentYear);
+
+        // Lấy slot tháng sau
+        int nextMonth = (currentMonth == 12) ? 1 : currentMonth + 1;
+        int nextYear = (currentMonth == 12) ? currentYear + 1 : currentYear;
+
+        List<TutorSlot> nextMonthSlots = slotRepo.findByTutorIdAndDateBetween(
+                (long) tutorId, nextMonth, nextYear);
+
+        // Gộp 2 tháng
+        List<TutorSlot> all = Stream.concat(thisMonth.stream(), nextMonthSlots.stream())
+                .filter(slot -> !slot.getDate().isBefore(today))
+                .sorted(Comparator.comparing(TutorSlot::getDate)
+                        .thenComparing(TutorSlot::getStartTime))
+                .collect(Collectors.toList());
+
+        
+        if (all.isEmpty())
+            return List.of();
+
+        
+        Map<LocalDate, List<TutorSlot>> grouped = all.stream()
+                .collect(Collectors.groupingBy(TutorSlot::getDate));
+
+        List<FreeSlotResponse> responseList = new ArrayList<>();
+
+        
+        for (var entry : grouped.entrySet()) {
+
+            LocalDate date = entry.getKey();
+            List<TutorSlot> slots = entry.getValue();
+
+            FreeSlotResponse resp = new FreeSlotResponse();
+            resp.setTutorId((long) tutorId);
+            resp.setDate(date);
+            resp.setStatus("AVAILABLE");
+
+            
+            List<FreeSlotResponse.TimeRange> ranges = slots.stream()
+                    .map(s -> new FreeSlotResponse.TimeRange(
+                            s.getStartTime(),
+                            s.getEndTime()))
+                    .collect(Collectors.toList());
+
+            resp.setTimeRanges(ranges);
+            responseList.add(resp);
+        }
+
+        
+        responseList.sort(Comparator.comparing(FreeSlotResponse::getDate));
+
+        return responseList;
+    }
+
+    @Override
+    public Meeting viewMeetingDetails(Long meetingId) {
         return meetingRepo.findById(meetingId);
     }
 }
