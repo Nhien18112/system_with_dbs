@@ -13,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/freeslots")
+@CrossOrigin(origins = "http://localhost:3000") // Mở cổng cho React
 public class FreeSlotAPI {
 
     @Autowired
@@ -41,7 +42,17 @@ public class FreeSlotAPI {
     @PostMapping("/daily")
     public ResponseEntity<?> overwriteSchedule(@RequestBody FreeSlotRequest request) {
         Long tutorId = 1L; // Mock ID
-        service.overwriteDailySchedule(tutorId, request);
-        return ResponseEntity.ok("Cập nhật lịch thành công!");
+        try {
+            // Gọi Service và nhận về danh sách cảnh báo (nếu có)
+            List<String> warnings = service.overwriteDailySchedule(tutorId, request);
+            
+            // Trả về 200 OK kèm danh sách cảnh báo
+            return ResponseEntity.ok(warnings);
+            
+        } catch (RuntimeException e) { 
+            // SỬA LỖI TẠI ĐÂY: Chỉ cần catch RuntimeException là đủ
+            // Nó sẽ bắt cả IllegalArgumentException (lỗi validate) và lỗi xung đột lịch
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

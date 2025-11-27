@@ -14,15 +14,20 @@ public class FreeSlotResponse {
         private LocalTime startTime;
         private LocalTime endTime;
 
+        // Constructor này rất quan trọng để Service gọi new TimeRange(...)
         public TimeRange(LocalTime startTime, LocalTime endTime) {
             this.startTime = startTime;
             this.endTime = endTime;
         }
         
+        // Getters & Setters
         public LocalTime getStartTime() { return startTime; }
+        public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
         public LocalTime getEndTime() { return endTime; }
+        public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
     }
 
+    // Getters & Setters cho lớp cha
     public Long getTutorId() { return tutorId; }
     public void setTutorId(Long tutorId) { this.tutorId = tutorId; }
     public LocalDate getDate() { return date; }

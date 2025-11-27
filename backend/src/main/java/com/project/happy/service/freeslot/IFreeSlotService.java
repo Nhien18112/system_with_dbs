@@ -8,5 +8,5 @@ import java.util.List;
 public interface IFreeSlotService {
     FreeSlotResponse getDailySchedule(Long tutorId, LocalDate date);
     List<FreeSlotResponse> getMonthlySchedule(Long tutorId, int month, int year);
-    void overwriteDailySchedule(Long tutorId, FreeSlotRequest request);
+    List<String> overwriteDailySchedule(Long tutorId, FreeSlotRequest request);
 }
