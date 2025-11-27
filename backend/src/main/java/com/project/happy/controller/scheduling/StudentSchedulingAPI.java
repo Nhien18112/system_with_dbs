@@ -51,7 +51,6 @@ public class StudentSchedulingAPI {
         List<Appointment> list = studentService.viewAppointmentHistory(studentId);
         return ResponseEntity.ok(list);
     }
-
    // =================== Cancelable Meetings ===================
     @GetMapping("/meetings/cancelable")
     public ResponseEntity<List<Meeting>> getCancelableMeetings(@RequestParam Long studentId) {
@@ -59,12 +58,10 @@ public class StudentSchedulingAPI {
         return ResponseEntity.ok(list);
     }
 
-
     // =================== Cancel Meeting ===================
     @PostMapping("/meetings/{id}/cancel")
     public ResponseEntity<String> cancel(@PathVariable Long id, @RequestBody CancelRequest req) {
         boolean success = studentService.cancelMeeting(id, req.getReason());
-
         if (success) {
             return ResponseEntity.ok("Meeting cancelled successfully");
         } else {

@@ -35,7 +35,6 @@ public class TutorSchedulingService implements ITutorSchedulingService {
 
     @Override
     public boolean approveAppointment(Long appointmentId, Long tutorId) {
-        
         Meeting meeting = meetingRepo.findById(appointmentId);
         if (meeting instanceof Appointment) {
             Appointment appointment = (Appointment) meeting;

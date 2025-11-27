@@ -1,0 +1,230 @@
+/* src/TutorSchedule.css */
+:root {
+  --primary-blue: #1e2858;
+  --light-bg: #eef8ff;
+  --white: #ffffff;
+  --border-color: #ddd;
+  --hover-color: #162049;
+}
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--light-bg);
+}
+
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* --- HEADER --- */
+.header {
+  background-color: var(--primary-blue);
+  color: white;
+  padding: 15px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+.header-right { font-weight: 500; }
+
+/* --- LAYOUT CHÍNH --- */
+.container { display: flex; flex: 1; }
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background: white;
+  padding-top: 20px;
+  border-right: 1px solid var(--border-color);
+}
+.sidebar-item {
+  padding: 15px 20px;
+  color: var(--primary-blue);
+  font-weight: 500;
+  cursor: pointer;
+  border-left: 4px solid transparent;
+}
+.sidebar-item.active {
+  background-color: var(--light-bg);
+  color: var(--primary-blue);
+  border-left-color: #fca503;
+  font-weight: bold;
+}
+
+/* Content */
+.content { flex: 1; padding: 30px; }
+
+.top-tabs { display: flex; gap: 15px; margin-bottom: 20px; }
+.tab-btn {
+  padding: 10px 25px;
+  border: 1px solid var(--border-color);
+  background: white;
+  border-radius: 20px;
+  cursor: pointer;
+  color: #666;
+  font-weight: 600;
+}
+.tab-btn.active {
+  background-color: var(--primary-blue);
+  color: white;
+  border: none;
+}
+
+/* Card Trắng Chính */
+.main-card {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+  min-height: 500px;
+}
+
+/* --- VIEW MODE --- */
+.view-mode-container { display: flex; gap: 40px; }
+
+/* List giờ bên trái */
+.time-list-panel { flex: 1; max-width: 280px; }
+.time-list-header {
+  background: var(--primary-blue);
+  color: white;
+  padding: 12px;
+  text-align: center;
+  border-radius: 6px 6px 0 0;
+  font-weight: bold;
+}
+.time-list-body {
+  border: 1px solid #eee;
+  border-top: none;
+  background: #f9f9f9;
+}
+.time-slot-item {
+  padding: 12px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+  color: var(--primary-blue);
+  font-weight: 500;
+  background: #dceeff;
+}
+.time-slot-item:nth-child(even) { background: #fff; }
+
+/* Lịch bên phải */
+.calendar-panel { flex: 2; }
+.setup-btn {
+  background: var(--primary-blue);
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  float: right;
+  margin-bottom: 15px;
+}
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 5px;
+  margin-top: 50px; /* Đẩy lịch xuống chút */
+}
+.cal-day {
+  padding: 15px;
+  border: 1px solid #eee;
+  text-align: center;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.cal-day:hover { background-color: #f0f0f0; }
+.cal-day.selected {
+  background-color: #badcfc;
+  border: 2px solid var(--primary-blue);
+  font-weight: bold;
+}
+
+/* --- SETUP MODE --- */
+.setup-mode-container { padding: 0 20px; }
+.action-bar { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+.save-btn {
+  background: var(--primary-blue);
+  color: white;
+  padding: 10px 40px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.setup-title {
+  color: var(--primary-blue);
+  border-bottom: 3px solid var(--primary-blue);
+  display: inline-block;
+  padding-bottom: 5px;
+  margin-bottom: 30px;
+}
+
+.date-picker-row { margin-bottom: 25px; font-weight: bold; color: #333; }
+.date-picker-row input { margin-left: 10px; padding: 5px; font-size: 15px; }
+
+.form-container {
+  background: #f8f9fa; /* Nền xám nhạt cho form */
+  padding: 30px;
+  border-radius: 8px;
+}
+
+.add-time-btn {
+  background: white;
+  border: 1px solid #ccc;
+  padding: 6px 15px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+.add-time-btn:hover { background: #eee; }
+
+.time-row {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.input-group { display: flex; align-items: center; gap: 10px; }
+.input-group label { font-size: 14px; color: #555; font-weight: 500; }
+
+/* Style cho cái Select Box (thay thế input cũ) */
+.input-box {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 110px;
+  text-align: center;
+  font-size: 14px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.delete-btn {
+  font-size: 18px;
+  color: #999;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: auto; /* Đẩy nút xóa sang phải cùng */
+}
+.delete-btn:hover { color: #d32f2f; }
+
+/* Footer */
+.footer {
+  background: var(--primary-blue);
+  color: #aaa;
+  padding: 30px 40px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}

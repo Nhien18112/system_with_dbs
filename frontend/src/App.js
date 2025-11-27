@@ -1,13 +1,14 @@
 import './App.css';
-import RegisterTutor from './RegisterTutor';
-import Layout from './Layout';
-import AppointmentBooking from './AppointmentBooking';
+//import RegisterTutor from './RegisterTutor';
+//import Layout from './Layout';
+import TutorFreeSlot from './TutorFreeSlot'; 
+//import AppointmentBooking from './AppointmentBooking';
 
 function App() {
   return (
-    <Layout>
-      <RegisterTutor />
-    </Layout>
+    //<Layout>
+      <TutorFreeSlot />
+    //</Layout>
   );
 }
 
