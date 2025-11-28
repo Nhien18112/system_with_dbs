@@ -1,7 +1,10 @@
 package com.project.happy.service.scheduling;
 
+<<<<<<< HEAD
 import java.time.LocalDate;
 import java.time.LocalTime;
+=======
+>>>>>>> eaceda135e97a29e08a46940efec3735d46724ce
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +16,10 @@ import com.project.happy.entity.Meeting;
 import com.project.happy.entity.TutorSlot;
 import com.project.happy.repository.FreeSlotRepository;
 import com.project.happy.repository.IMeetingRepository;
+<<<<<<< HEAD
 import com.project.happy.service.freeslot.IFreeSlotService;
+=======
+>>>>>>> eaceda135e97a29e08a46940efec3735d46724ce
 
 @Service
 public class TutorSchedulingService implements ITutorSchedulingService {
@@ -130,6 +136,10 @@ public class TutorSchedulingService implements ITutorSchedulingService {
     public List<Meeting> viewOfficialMeetings(Long tutorId) {
         return meetingRepo.findOfficialMeetingsByTutor(tutorId);
     }
+<<<<<<< HEAD
+=======
+    
+>>>>>>> eaceda135e97a29e08a46940efec3735d46724ce
 
     /*
      * @Override

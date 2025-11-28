@@ -79,7 +79,7 @@
 /* SIDEBAR */
 .sidebar {
   width: 230px;
-  background-color: #f4f8ff;
+  background-color: #003b73;
   padding-top: 24px;
   border-right: 1px solid #dde6ff;
 }
@@ -88,7 +88,7 @@
   padding: 10px 24px;
   cursor: pointer;
   font-size: 15px;
-  color: #4a5a78;
+  color: #ffffff;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -173,7 +173,36 @@
   padding: 12px !important;
 }
 
+/* ngày có lịch rảnh của tutor */
+.calendar-day-available {
+  background-color: #e0edff !important; /* nền xanh nhạt */
+  color: #005bff !important;
+  font-weight: 600;
+}
+
+/* nếu ngày rảnh đang được chọn */
+.react-calendar__tile--active.calendar-day-available {
+  background-color: #005bff !important;
+  color: #ffffff !important;
+}
+
 /* TUTOR + FORM */
+/* TUTOR SECTION ABOVE CARD */
+.tutor-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.tutor-section-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #1f2a3c;
+}
+
 .booking-right {
   display: flex;
   flex-direction: column;
@@ -181,15 +210,14 @@
 }
 
 .tutor-card {
-  display: inline-flex;   /* hoặc flex cũng được, inline-flex thì nhìn “gọn” hơn */
-  gap: 12px;
+  display: flex !important;         /* ép dùng flex hàng ngang */
+  flex-direction: row !important;   /* đảm bảo không bị set column ở đâu đó */
   align-items: center;
+  gap: 12px;
   padding: 12px 16px;
   border-radius: 14px;
   background-color: #e8f3ff;
   max-width: 280px;
-  /* KHÔNG đặt width: 100% / max-width: 600px ở đây */
-  /* nếu sợ quá dài, có thể thêm: max-width: 400px; */
 }
 
 .avatar-circle {
@@ -205,10 +233,11 @@
   font-size: 18px;
 }
 
-.tutor-text {
+/* new wrapper for the two text lines */
+.tutor-info {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;   /* đảm bảo căn trái */
+  align-items: flex-start;  /* force left alignment */
   text-align: left;
 }
 
@@ -218,7 +247,7 @@
 
 .tutor-dept {
   font-size: 13px;
-  color: #586482;
+  color: #64748b;
 }
 
 /* FORM */
@@ -288,7 +317,7 @@
 
 .primary-btn {
   margin-top: 8px;
-  align-self: flex-start;
+  align-self: center;
   padding: 10px 30px;
   border-radius: 999px;
   border: none;

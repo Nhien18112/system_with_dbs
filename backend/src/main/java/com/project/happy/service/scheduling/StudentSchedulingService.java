@@ -72,6 +72,7 @@ public class StudentSchedulingService implements IStudentSchedulingService {
 
     @Override
     public boolean cancelMeeting(Long meetingId, String reason) {
+
         Meeting meeting = meetingRepo.findById(meetingId);
         if (meeting == null || meeting.isCancelled()) {
             return false;

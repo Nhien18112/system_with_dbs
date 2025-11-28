@@ -2,59 +2,44 @@
 import apiClient from "./apiClient";
 
 /**
- * Gọi backend để lấy danh sách khung giờ rảnh của 1 tutor trong 1 ngày.
- * tutorId: Long
- * date: string "YYYY-MM-DD"
- *
- * Giả định backend trả về:
- * [
- *   { "id": 1, "startTime": "08:00", "endTime": "09:00" },
- *   ...
- * ]
+ * Lấy lịch rảnh
  */
-export const getTutorAvailableSlots = (tutorId, date) => {
-  if (!tutorId || !date) {
-    return Promise.resolve([]);
-  }
-
-  return apiClient
-    .get(`/scheduling/tutors/${tutorId}/available-slots`, {
-      params: { date }, // ?date=2025-11-30
-    })
-    .then((res) => res.data);
+export const getTutorFreeSlots = async (tutorId) => {
+  const res = await apiClient.get(
+    `/api/student/scheduling/available-slots/${tutorId}`
+  );
+  console.log("Slots from backend:", res.data);
+  return res.data;
 };
 
 /**
- * Đặt lịch hẹn mới (student -> tutor).
- * Payload map 1-1 với AppointmentRequest ở backend:
- *
- *  AppointmentRequest {
- *    Long studentId;
- *    Long tutorId;
- *    String date;      // "YYYY-MM-DD"
- *    String startTime; // "HH:mm"
- *    String topic;
- *    String message;   // (nếu DTO của bạn có field message)
- *  }
+ * Đặt lịch hẹn
+ *  - dateKey: "YYYY-MM-DD"
+ *  - timeRange: "HH:mm - HH:mm"
  */
-export const bookAppointment = ({
+export const bookAppointment = async ({
   studentId,
   tutorId,
-  date,
-  startTime,
+  dateKey,
+  timeRange,
   topic,
-  message,
 }) => {
-  const requestBody = {
+  const [startLabel, endLabel] = timeRange.split(" - "); // "07:00", "09:00"
+
+  const payload = {
     studentId,
     tutorId,
-    date,
-    startTime,
+    date: `${dateKey}T00:00:00`,
+    startTime: `${dateKey}T${startLabel}:00`,
+    endTime: `${dateKey}T${endLabel}:00`,
     topic,
-    message,
   };
 
-  return apiClient
-    .post("/scheduling/appointments", requestBody)
-    .then((res) => res.data); // res.data là Appointment (Meeting) backend trả về
+  console.log("Booking payload:", payload);
+
+  const res = await apiClient.post(
+    "/api/student/scheduling/appointments",
+    payload
+  );
+  return res.data;
 };

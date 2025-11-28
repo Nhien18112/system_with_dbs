@@ -66,7 +66,6 @@ public class TutorSchedulingAPI {
     @GetMapping("/meetings/official")
     public ResponseEntity<List<Meeting>> official(@RequestParam Long tutorId) {
         List<Meeting> list = tutorService.viewOfficialMeetings(tutorId); // có thể là Appointment + các loại Meeting //
-                                                                         // khác
         return ResponseEntity.ok(list);
     }
 
