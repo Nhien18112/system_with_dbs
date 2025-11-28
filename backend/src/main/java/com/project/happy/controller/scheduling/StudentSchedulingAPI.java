@@ -61,13 +61,6 @@ public class StudentSchedulingAPI {
         return ResponseEntity.ok(list);
     }
 
-   // =================== Cancelable Meetings ===================
-    @GetMapping("/meetings/cancelable")
-    public ResponseEntity<List<Meeting>> getCancelableMeetings(@RequestParam Long studentId) {
-        List<Meeting> list = studentService.findCancellableMeetings(studentId);
-        return ResponseEntity.ok(list);
-    }
-
 
     // =================== Cancel Meeting ===================
     @PostMapping("/meetings/{id}/cancel")
