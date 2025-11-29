@@ -1,0 +1,164 @@
+.feedback-page-wrapper {
+  /* Để nó chiếm gần hết chiều ngang */
+  width: 95%;
+
+  /* Hoặc nếu muốn nó to nhưng vẫn chừa lề một chút thì dùng: */
+  /* width: 95%; */
+  height: auto;
+  margin: 0 auto;
+
+  /* Nếu nội dung dài, hãy cho nó scroll ở đây */
+  /* overflow-y: auto; */
+  min-height: 100%;
+  padding: 20px; /* Thêm chút đệm cho đẹp */
+}
+.top-actionss {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.left-actions-group {
+  display: flex;
+  gap: 15px;
+}
+
+.btn-back {
+  background-color: transparent;
+  color: #666;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-back:hover {
+  background-color: #e5e7eb;
+  border-radius: 6px;
+  color: #002b5c;
+}
+
+.btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  font-size: 0.95rem;
+}
+.btn-outline {
+  background-color: white;
+  border: 1px solid #ddd;
+  color: #555;
+}
+.btn-primary.active-tab {
+  background-color: #002b5c;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 43, 92, 0.3);
+}
+
+.feedback-content-container {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+.feedback-card {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+.info-label {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10px;
+}
+.info-content {
+  color: #333;
+  font-weight: 500;
+  line-height: 1.4;
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 30px;
+  margin-bottom: 25px;
+}
+
+.text-right-md {
+  text-align: left;
+}
+@media (min-width: 768px) {
+  .text-right-md {
+    text-align: right;
+  }
+}
+
+.rating-section,
+.comment-section {
+  margin-bottom: 25px;
+  width: 100%;
+}
+.star-rating {
+  display: flex;
+  gap: 5px;
+}
+.star-icon {
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+.star-icon:hover {
+  transform: scale(1.1);
+}
+
+.feedback-textarea {
+  width: 100%;
+  height: 120px;
+  padding: 15px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  resize: none;
+  font-size: 0.95rem;
+  background-color: #f9fafb;
+  box-sizing: border-box;
+}
+.feedback-textarea:focus {
+  outline: none;
+  border-color: #0ea5e9;
+  background-color: white;
+}
+
+.btn-submit {
+  background-color: #0ea5e9;
+  color: white;
+  border: none;
+  padding: 10px 40px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+.btn-submit:hover {
+  background-color: #0284c7;
+}
+
+.history-item {
+  margin-bottom: 15px;
+}
+.history-date {
+  font-weight: 500;
+  color: #555;
+  margin-bottom: 5px;
+}
+.history-detail {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  color: #333;
+}
