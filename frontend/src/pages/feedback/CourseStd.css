@@ -1,0 +1,45 @@
+.course-std-page {
+  /* Để nó chiếm gần hết chiều ngang */
+  width: 95%;
+
+  /* Hoặc nếu muốn nó to nhưng vẫn chừa lề một chút thì dùng: */
+  /* width: 95%; */
+  height: auto;
+  margin: 0 auto;
+
+  /* Nếu nội dung dài, hãy cho nó scroll ở đây */
+  /* overflow-y: auto; */
+  min-height: 100%;
+  padding: 20px; /* Thêm chút đệm cho đẹp */
+}
+.top-actions {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 25px;
+}
+.btn {
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+}
+.btn-outline {
+  background: white;
+  border: 1px solid #ddd;
+}
+.btn-primary {
+  background: var(--primary-blue);
+  color: white;
+}
+.card-container {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.section-title {
+  font-size: 1.1rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+}

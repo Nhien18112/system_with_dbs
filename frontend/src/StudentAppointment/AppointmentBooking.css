@@ -1,0 +1,375 @@
+.booking-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.user-chip {
+  background-color: #ffffff22;
+  padding: 6px 14px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.user-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #003b73;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.user-name {
+  white-space: nowrap;
+}
+
+/* ===== MAIN LAYOUT ===== */
+.booking-main {
+  flex: 1;
+  display: flex;
+}
+
+
+/* CONTENT AREA */
+.booking-content {
+  flex: 1;
+  padding: 24px 40px 32px;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(#f5f8ff, #eef4ff);
+}
+
+/* TABS */
+.booking-tabs {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.tab-btn {
+  border-radius: 999px;
+  padding: 8px 22px;
+  border: 1px solid #d0d9f5;
+  background-color: #ffffff;
+  font-size: 14px;
+  cursor: pointer;
+  color: #3d4a65;
+}
+
+.tab-btn-active {
+  background-color: #003366;
+  color: #ffffff;
+  border-color: #003366;
+}
+
+/* CARD CHÍNH */
+.booking-card {
+  background-color: #ffffff;
+  border-radius: 24px;
+  box-shadow: 0 18px 40px rgba(0, 40, 120, 0.12);
+  padding: 24px 28px 28px;
+}
+
+
+.booking-body {
+  display: grid;
+  /* cột 1 cố định 420px (vừa với calendar), cột 2 dùng phần còn lại */
+  grid-template-columns: 420px minmax(0, 1fr);
+  column-gap: 16px;  /* khoảng cách giữa lịch và form: 16px, có thể chỉnh 12/20 tuỳ thích */
+  align-items: flex-start;
+}
+
+/* CALENDAR */
+.calendar-section {
+  max-width: 100%;  
+}
+.calendar-custom {
+  border-radius: 20px !important;
+  border: 1px solid #dde6ff !important;
+  box-shadow: none !important;
+  padding: 12px !important;
+}
+
+/* ngày có lịch rảnh của tutor */
+.calendar-day-available {
+  background-color: #e0edff !important; /* nền xanh nhạt */
+  color: #005bff !important;
+  font-weight: 600;
+}
+
+/* nếu ngày rảnh đang được chọn */
+.react-calendar__tile--active.calendar-day-available {
+  background-color: #003366 !important;
+  color: #ffffff !important;
+}
+
+/* TUTOR + FORM */
+/* TUTOR SECTION ABOVE CARD */
+.tutor-section {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.tutor-section-title {
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #1f2a3c;
+}
+
+.booking-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.tutor-card {
+  display: flex !important;         /* ép dùng flex hàng ngang */
+  flex-direction: row !important;   /* đảm bảo không bị set column ở đâu đó */
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background-color: #e8f3ff;
+  max-width: 280px;
+}
+
+.avatar-circle {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #0055cc;
+  font-size: 18px;
+}
+
+/* new wrapper for the two text lines */
+.tutor-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;  /* force left alignment */
+  text-align: left;
+}
+
+.tutor-name {
+  font-weight: 600;
+}
+
+.tutor-dept {
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* FORM */
+.booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 600px; 
+}
+/* .booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  max-width: 1000px;   
+  align-self: flex-start;  
+} */
+
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+  text-align: left; /* đảm bảo căn trái */
+}
+
+.form-group label {
+  font-weight: 500;
+  color: #3d4a65;
+}
+
+.form-input-wrapper {
+  position: relative;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  border-radius: 10px;
+  border: 1px solid #c8d4f0;
+  padding: 10px 36px 10px 12px;
+  font-size: 14px;
+  text-align: left; /* text trong input căn trái */
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #003366;
+  box-shadow: 0 0 0 2px #005bff22;
+}
+
+.form-input-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.primary-btn {
+  margin-top: 8px;
+  align-self: center;
+  padding: 10px 30px;
+  border-radius: 999px;
+  border: none;
+  background-color: #003366;
+  color: #ffffff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary-btn:hover {
+  background-color: #003366;
+}
+
+.error-text {
+  color: #d63031;
+  font-size: 13px;
+}
+
+.success-text {
+  color: #0b8457;
+  font-size: 13px;
+}
+
+
+
+.appointment-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.appointment-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid #e0e7ff;
+  background-color: #f8fbff;
+}
+
+.appointment-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.appointment-topic {
+  font-weight: 600;
+  color: #003366;
+}
+
+.appointment-meta {
+  font-size: 13px;
+  color: #6b7280;
+  display: flex;
+  gap: 6px;
+}
+
+.appointment-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pending {
+  background-color: #fff7e6;
+  color: #d97706;
+}
+
+.status-approved {
+  background-color: #e0f9f0;
+  color: #059669;
+}
+
+.status-rejected {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}
+
+.btn-cancel-appointment {
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #ef4444;
+  background-color: #ffffff;
+  color: #ef4444;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-cancel-appointment:hover {
+  background-color: #fee2e2;
+}
+
+/* Tiêu đề nhỏ trong mỗi card (Đặt lịch hẹn / Lịch hẹn của tôi) */
+.card-section-title {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1f2a3c;
+  text-align: left;
+}
+
+/* Card phía dưới cách card phía trên một đoạn */
+.booking-card + .booking-card {
+  margin-top: 16px;
+}
+
+
+/* Đổi màu ngày thứ 7 & CN về đen */
+.react-calendar__month-view__days__day--weekend {
+  color: #000000 !important;
+}
+
+/* Đổi màu chữ tiêu đề thứ/ngày (TH.7, CN) về đen luôn */
+.react-calendar__month-view__weekdays__weekday abbr {
+  color: #000000 !important;
+}
+.appointment-reason {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #b91c1c; /* cùng tông với status-rejected */
+}
