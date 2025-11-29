@@ -1,5 +1,6 @@
 package com.project.happy.service.scheduling;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,7 @@ import org.springframework.stereotype.Service;
 import com.project.happy.entity.Appointment;
 import com.project.happy.entity.AppointmentStatus;
 import com.project.happy.entity.Meeting;
-import com.project.happy.repository.FreeSlotRepository;
+import com.project.happy.entity.MeetingStatus;
 import com.project.happy.repository.IMeetingRepository;
 import com.project.happy.service.freeslot.IFreeSlotService;
 
@@ -18,20 +19,43 @@ public class TutorSchedulingService implements ITutorSchedulingService {
     private final IMeetingRepository meetingRepo;
     @Autowired
     private IFreeSlotService freeSlotService;
-    @Autowired
-    public TutorSchedulingService(IMeetingRepository meetingRepo, FreeSlotRepository slotRepo) {
+
+    public TutorSchedulingService(IMeetingRepository meetingRepo, IFreeSlotService slotService) {
         this.meetingRepo = meetingRepo;
+        this.freeSlotService = slotService;
     }
 
     @Override
     public List<Appointment> viewPendingAppointments(Long tutorId) {
-        return meetingRepo.findPendingAppointmentsByTutor(tutorId);
+        LocalDateTime now = LocalDateTime.now();
+
+        // Lấy tất cả appointment PENDING từ repo (không tự động reject trong repo)
+        List<Appointment> pending = meetingRepo.findPendingAppointmentsByTutor(tutorId);
+
+        // Duyệt danh sách, nếu appointment đã qua thời gian hiện tại thì reject
+        pending.forEach(a -> {
+            if (a.getStartTime().isBefore(now)) {
+                a.reject("Thời gian đã qua");
+                meetingRepo.update(a); // cập nhật trạng thái trong DB
+            }
+        });
+
+        // Trả về chỉ những appointment vẫn còn PENDING
+        return pending.stream()
+                .filter(a -> a.getAppointmentStatus() == AppointmentStatus.PENDING)
+                .toList();
     }
 
     @Override
-    public List<Appointment> viewOfficialAppointments(Long tutorId) {
+    public List<Meeting> findCancellableMeetings(Long tutorId) {
+        List<Meeting> officialMeetings = meetingRepo.findOfficialMeetingsByTutor(tutorId);
+        LocalDateTime now = LocalDateTime.now();
 
-        return meetingRepo.findOfficialAppointmentsByTutor(tutorId);
+        return officialMeetings.stream()
+                .peek(m -> m.updateStatus(now)) // cập nhật status real-time
+                .filter(m -> !m.isCancelled()
+                        && (m.getStatus() == MeetingStatus.SCHEDULED || m.getStatus() == MeetingStatus.ONGOING))
+                .toList();
     }
 
     @Override
@@ -107,13 +131,11 @@ public class TutorSchedulingService implements ITutorSchedulingService {
     }
 
     @Override
-    public List<Appointment> findPendingAppointments(Long tutorId) {
-        return meetingRepo.findPendingAppointmentsByTutor(tutorId);
-    }
-
-    @Override
     public List<Meeting> viewOfficialMeetings(Long tutorId) {
-        return meetingRepo.findOfficialMeetingsByTutor(tutorId);
+        List<Meeting> list = meetingRepo.findOfficialMeetingsByStudent(tutorId);
+        list.forEach(m -> m.updateStatus(LocalDateTime.now()));
+        return list;
+
     }
 
     /*
@@ -132,7 +154,11 @@ public class TutorSchedulingService implements ITutorSchedulingService {
      */
     @Override
     public Meeting viewMeetingDetails(Long meetingId) {
-        return meetingRepo.findById(meetingId);
+        Meeting meeting = meetingRepo.findById(meetingId);
+        if (meeting != null) {
+            meeting.updateStatus(LocalDateTime.now());
+        }
+        return meeting;
     }
 
     @Override

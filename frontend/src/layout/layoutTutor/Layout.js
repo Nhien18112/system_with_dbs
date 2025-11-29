@@ -4,8 +4,8 @@ import "./Layout.css";
 import { Calendar, BookOpen, Settings, Bell } from "react-feather";
 
 // Import ảnh
-import logoImg from "../../logo.svg";
-import avatarImg from "../../logo.svg";
+import logoImg from '../../assets/logo-bk.png'; 
+import avatarImg from '../../assets/avatar.svg';
 
 const Layout = ({ children }) => {
   return (

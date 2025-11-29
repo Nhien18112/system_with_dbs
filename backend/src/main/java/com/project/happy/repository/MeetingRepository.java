@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import com.project.happy.entity.Appointment;
 import com.project.happy.entity.AppointmentStatus;
 import com.project.happy.entity.Meeting;
-import com.project.happy.entity.MeetingStatus;
+
 
 @Repository
 public class MeetingRepository implements IMeetingRepository {
@@ -63,13 +63,7 @@ public class MeetingRepository implements IMeetingRepository {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<Appointment> findOfficialAppointmentsByTutor(Long tutorId) {
-        // Tận dụng hàm findApprovedAppointmentsByTutor
-        return findApprovedAppointmentsByTutor(tutorId).stream()
-                .filter(a -> !a.isCancelled()) // chỉ lấy những buổi chưa hủy
-                .collect(Collectors.toList());
-    }
+    
 
     // =====================
     // Student-specific queries
@@ -113,29 +107,13 @@ public class MeetingRepository implements IMeetingRepository {
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public List<Appointment> findOfficialAppointmentsByStudent(Long studentId) {
-        return findApprovedAppointmentsByStudent(studentId).stream()
-                .filter(a -> !a.isCancelled()) // chỉ lấy buổi chưa hủy
-                .collect(Collectors.toList());
-    }
+    
 
     // =====================
     // Cancellable meetings (tách Tutor / Student)
     // =====================
-    @Override
-    public List<Appointment> findCancellableAppointmentsByTutor(Long tutorId) {
-        return findOfficialAppointmentsByTutor(tutorId).stream() // tận dụng hàm official
-                .filter(a -> a.getStatus() == MeetingStatus.SCHEDULED) // chỉ lấy Scheduled
-                .collect(Collectors.toList());
-    }
 
-    @Override
-    public List<Appointment> findCancellableAppointmentsByStudent(Long studentId) {
-        return findOfficialAppointmentsByStudent(studentId).stream() // tận dụng hàm official
-                .filter(a -> a.getStatus() == com.project.happy.entity.MeetingStatus.SCHEDULED) // chỉ Scheduled
-                .collect(Collectors.toList());
-    }
+    
 
     @Override
     public List<Meeting> findOfficialMeetingsByStudent(Long studentId) {
@@ -156,21 +134,6 @@ public class MeetingRepository implements IMeetingRepository {
     }
 
     // Meetings cancellable cho student
-    public List<Meeting> findCancellableMeetingsByStudent(Long studentId) {
-        return findOfficialMeetingsByStudent(studentId).stream()
-                .filter(m -> m instanceof Appointment)
-                .map(m -> (Appointment) m)
-                .filter(m -> m.getStatus() == com.project.happy.entity.MeetingStatus.SCHEDULED)
-                .collect(Collectors.toList());
-    }
-
-    // Meetings cancellable cho tutor
-    public List<Meeting> findCancellableMeetingsByTutor(Long tutorId) {
-        return findOfficialMeetingsByTutor(tutorId).stream()
-                .filter(m -> m instanceof Appointment)
-                .map(m -> (Appointment) m)
-                .filter(m -> m.getStatus() == com.project.happy.entity.MeetingStatus.SCHEDULED)
-                .collect(Collectors.toList());
-    }
+    
 
 }

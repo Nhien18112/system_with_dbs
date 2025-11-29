@@ -6,6 +6,7 @@ import java.util.List;
 
 import com.project.happy.dto.freeslot.FreeSlotRequest; // Nhớ import cái này
 import com.project.happy.dto.freeslot.FreeSlotResponse;
+import com.project.happy.entity.TutorSlot;
 
 public interface IFreeSlotService {
     
@@ -13,7 +14,7 @@ public interface IFreeSlotService {
     FreeSlotResponse getDailySchedule(Long tutorId, LocalDate date);
     List<FreeSlotResponse> getMonthlySchedule(Long tutorId, int month, int year);
     List<String> overwriteDailySchedule(Long tutorId, FreeSlotRequest request);
-
+    List<TutorSlot> getRawAvailableSlots(Long tutorId, LocalDate date);
     // --- CHO BACKEND KHÁC GỌI (MODULE APPOINTMENT) ---
     
     /**

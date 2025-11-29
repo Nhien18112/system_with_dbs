@@ -313,4 +313,8 @@ public class FreeSlotService implements IFreeSlotService {
         res.setTimeRanges(ranges);
         return res;
     }
+    public List<TutorSlot> getRawAvailableSlots(Long tutorId, LocalDate date) {
+    // Gọi trực tiếp Repository để lấy dữ liệu Entity thô
+    return repo.findAvailableByTutorIdAndDate(tutorId, date);
+}
 }

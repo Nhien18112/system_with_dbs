@@ -15,20 +15,17 @@ public interface IMeetingRepository {
     // Tutor-specific queries
     List<Appointment> findPendingAppointmentsByTutor(Long tutorId);
     List<Appointment> findApprovedAppointmentsByTutor(Long tutorId);
-    List<Appointment> findOfficialAppointmentsByTutor(Long tutorId);
-
+    
     // Student-specific queries
     List<Appointment> findAllAppointmentsByStudent(Long studentId);    // all appointments, any status     // all meetings, any status
     List<Appointment> findApprovedAppointmentsByStudent(Long studentId);
     List<Meeting> findApprovedMeetingByStudent(Long studentId);
     List<Meeting> findApprovedMeetingByTutor(Long studentId);
-    List<Appointment> findOfficialAppointmentsByStudent(Long studentId);
+  
 
     List<Meeting> findOfficialMeetingsByStudent(Long studentId);
     List<Meeting> findOfficialMeetingsByTutor(Long tutorId);
     // Common / Helper
-    List<Appointment> findCancellableAppointmentsByTutor(Long tutorId);
-    List<Appointment> findCancellableAppointmentsByStudent(Long studentId);
-    List<Meeting> findCancellableMeetingsByStudent(Long studentId);
-    List<Meeting> findCancellableMeetingsByTutor(Long tutorId);
+    
+   
 }
