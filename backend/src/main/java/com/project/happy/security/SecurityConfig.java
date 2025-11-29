@@ -35,6 +35,8 @@ public class SecurityConfig {
                         .requestMatchers("/api/student/**").permitAll() // 2. API Sinh viên
                         .requestMatchers("/api/student/scheduling/**").permitAll() // 2. API Đặt lịch (MỚI THÊM)
                         .requestMatchers("/api/tutor/**").permitAll()
+                        .requestMatchers("/api/feedbacks/**").permitAll() 
+                        .requestMatchers("/error").permitAll()
 
                         // -----------------------
 
