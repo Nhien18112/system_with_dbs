@@ -1,16 +1,9 @@
 .course-std-page {
-  /* Để nó chiếm gần hết chiều ngang */
   width: 95%;
-
-  /* Hoặc nếu muốn nó to nhưng vẫn chừa lề một chút thì dùng: */
-  /* width: 95%; */
   height: auto;
   margin: 0 auto;
-
-  /* Nếu nội dung dài, hãy cho nó scroll ở đây */
-  /* overflow-y: auto; */
   min-height: 100%;
-  padding: 20px; /* Thêm chút đệm cho đẹp */
+  padding: 20px;
 }
 .top-actions {
   display: flex;

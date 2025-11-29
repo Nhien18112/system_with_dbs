@@ -1,53 +1,54 @@
 import React, { useEffect, useState } from "react";
 import MeetingCard from "../../components/feedback/MeetingCard";
 import "./CourseStd.css";
-
+import { getOfficialMeetings } from "../../service/apiMeeting";
 const CourseStd = () => {
   const [meetings, setMeetings] = useState([]);
-  //Du lieu mau khi API loi
-  const sampleMeetings = [
-    {
-      meetingId: 1,
-      date: "2025-11-30",
-      timestart: "08:00",
-      timeend: "10:00",
-      topic: "Ôn tập Toán Cao Cấp - Ma trận",
-    },
-    {
-      meetingId: 2,
-      date: "2025-12-01",
-      timestart: "14:00",
-      timeend: "16:00",
-      topic: "Lập trình Web - ReactJS cơ bản",
-    },
-    {
-      meetingId: 3,
-      date: "2025-12-05",
-      timestart: "09:30",
-      timeend: "11:30",
-      topic: "Tiếng Anh giao tiếp - Topic: Travel",
-    },
-  ];
+  const [loading, setLoading] = useState(true);
 
-  // Lay danh sach buoi hen tu BE
+  const currentStudentId = 1; // mac dinh studentId la 1
+  const formatMeetingTime = (startStr, endStr) => {
+    try {
+      const startDate = new Date(startStr);
+      const endDate = new Date(endStr);
+      const start = startDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const end = endDate.toLocaleTimeString("vi-VN", {
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+      const date = startDate.toLocaleDateString("vi-VN");
+
+      return `${start} - ${end}, ngày ${date}`;
+    } catch (e) {
+      return `${startStr} - ${endStr}`;
+    }
+  };
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/meetings")
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`Server error: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        setMeetings(data);
-      })
-      .catch((error) => {
-        console.error("Lỗi khi tải danh sách", error);
-        //Dung du lieu mau neu API loi
-        setMeetings(sampleMeetings);
-      });
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const dataFromBackend = await getOfficialMeetings(currentStudentId);
+        const formattedData = dataFromBackend.map((item) => ({
+          meetingId: item.meetingId,
+          topic: item.topic || "Chưa có chủ đề",
+          date: formatMeetingTime(item.startTime, item.endTime),
+          isWorkshop: item.type !== "APPOINTMENT",
+        }));
+
+        setMeetings(formattedData);
+      } catch (error) {
+        console.error("Lỗi:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentStudentId]);
 
   return (
     <div className="course-std-page">
@@ -57,15 +58,17 @@ const CourseStd = () => {
       </div>
       <div className="card-container">
         <h2 className="section-title">Buổi hẹn đã tham gia</h2>
-        <div className="meeting-list">
-          {meetings.length === 0 ? (
-            <p>Đang tải dữ liệu...</p>
-          ) : (
-            meetings.map((item) => (
-              <MeetingCard key={item.meetingId} data={item} />
-            ))
-          )}
-        </div>
+        {loading ? (
+          <p>Đang tải dữ liệu...</p>
+        ) : meetings.length === 0 ? (
+          <p>Chưa có buổi hẹn nào.</p>
+        ) : (
+          <div className="meeting-list">
+            {meetings.map((item) => (
+              <MeetingCard key={item.id} data={item} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

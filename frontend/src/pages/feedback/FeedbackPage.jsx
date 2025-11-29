@@ -13,68 +13,68 @@ const FeedbackPage = () => {
   // State luu thong tin buoi hen va lich su phan hoi
   const [meeting, setMeeting] = useState(null);
   const [history, setHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   // State luu thong tin form phan hoi
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
 
-  const sampleMeetings = [
-    {
-      meetingId: 1,
-      date: "2025-11-30",
-      timestart: "08:00",
-      timeend: "10:00",
-      topic: "Ôn tập Toán Cao Cấp - Ma trận",
-    },
-    {
-      meetingId: 2,
-      date: "2025-12-01",
-      timestart: "14:00",
-      timeend: "16:00",
-      topic: "Lập trình Web - ReactJS cơ bản",
-    },
-    {
-      meetingId: 3,
-      date: "2025-12-05",
-      timestart: "09:30",
-      timeend: "11:30",
-      topic: "Tiếng Anh giao tiếp - Topic: Travel",
-    },
-  ];
-
   useEffect(() => {
-    //Lay thong tin buoi hen
-    const fetchMeetingInfo = () => {
-      fetch("http://localhost:8080/api/meetings")
-        .then((res) => res.json())
-        .then((data) => {
-          const found = data.find((m) => m.meetingId.toString() === id);
-          if (found) setMeeting(found);
-        })
-        .catch((error) => {
-          console.error("Lỗi khi tải thông tin buổi hẹn", error);
-          const found = sampleMeetings.find(
-            (m) => m.meetingId.toString() === id
-          );
-          if (found) setMeeting(found);
+    const fetchMeetingInfo = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8080/api/student/scheduling/meeting/${id}`
+        );
+        if (!res.ok) throw new Error("Không tìm thấy buổi hẹn");
+
+        const data = await res.json();
+
+        setMeeting({
+          topic: data.topic,
+          timeInfo: `${formatTime(data.startTime)} - ${formatTime(
+            data.endTime
+          )}, ${formatDate(data.startTime)}`,
         });
+      } catch (error) {
+        console.error("Lỗi tải thông tin buổi hẹn:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    //Lay lich su phan hoi
-    const fetchHistory = () => {
-      fetch(`http://localhost:8080/api/feedbacks?meetingId=${id}`)
-        .then((res) => res.json())
-        .then((data) => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:8080/api/feedbacks?meetingId=${id}`
+        );
+        if (res.ok) {
+          const data = await res.json();
           setHistory(data);
-        });
+        }
+      } catch (error) {
+        console.error("Lỗi tải lịch sử:", error);
+      }
     };
 
     fetchMeetingInfo();
     fetchHistory();
   }, [id]);
 
+  const formatTime = (isoString) => {
+    if (!isoString) return "";
+    return new Date(isoString).toLocaleTimeString("vi-VN", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatDate = (isoString) => {
+    if (!isoString) return "";
+    return new Date(isoString).toLocaleDateString("vi-VN");
+  };
+
   // Gui phan hoi
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (rating === 0) {
       alert("Vui lòng chọn số sao đánh giá!");
       return;
@@ -86,34 +86,37 @@ const FeedbackPage = () => {
       comment: comment,
     };
 
-    //Gui phan hoi len BE
-    fetch("http://localhost:8080/api/feedbacks", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => {
-        if (res.ok) return res.json();
-        throw new Error("Gửi thất bại");
-      })
-      .then((newFeedback) => {
-        // Hien popup thanh cong va cap nhat lich su
-        setShowPopup(true);
-        setHistory([newFeedback, ...history]);
-        setComment("");
-        setRating(0);
-      })
-      .catch((err) => alert("Có lỗi xảy ra: " + err.message));
+    try {
+      const res = await fetch("http://localhost:8080/api/feedbacks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) throw new Error("Gửi thất bại");
+
+      const newFeedback = await res.json();
+
+      setShowPopup(true);
+      setHistory([newFeedback, ...history]);
+      setComment("");
+      setRating(0);
+    } catch (err) {
+      alert("Có lỗi xảy ra: " + err.message);
+    }
   };
 
   const handleClosePopup = () => {
     setShowPopup(false);
   };
 
-  if (!meeting) return <div style={{ padding: 20 }}>Loading...</div>;
-
+  if (isLoading) return <div style={{ padding: 20 }}>Đang tải dữ liệu...</div>;
+  if (!meeting)
+    return (
+      <div style={{ padding: 20 }}>Không tìm thấy thông tin buổi hẹn!</div>
+    );
   return (
     <div className="feedback-page-wrapper">
       <SuccessPopup isOpen={showPopup} onClose={handleClosePopup} />
@@ -140,7 +143,7 @@ const FeedbackPage = () => {
             </div>
             <div className="info-item text-right-md">
               <h3 className="info-label">Thời gian</h3>
-              <p className="info-content">{meeting.date}</p>
+              <p className="info-content">{meeting.Info}</p>
             </div>
           </div>
 
@@ -189,7 +192,7 @@ const FeedbackPage = () => {
               <div key={index} className="history-item">
                 <div className="history-date">
                   {item.submitAt
-                    ? new Date(item.submitAt).toLocaleString()
+                    ? new Date(item.submitAt).toLocaleString("vi-VN")
                     : "Vừa xong"}
                 </div>
                 <div className="history-detail">

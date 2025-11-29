@@ -5,7 +5,7 @@ import com.project.happy.entity.Feedback;
 import com.project.happy.service.feedback.FeedbackService;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/feedbacks")
 public class FeedbackController {

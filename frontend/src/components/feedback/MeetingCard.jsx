@@ -9,11 +9,9 @@ const MeetingCard = ({ data }) => {
       <div className="card-header">
         <div className="meeting-title">Chủ đề: {data.topic}</div>
         <span
-          className={`status-badge ${
-            /*data.isWorkshop*/ true ? "workshop" : "meeting"
-          }`}
+          className={`status-badge ${data.isWorkshop ? "workshop" : "meeting"}`}
         >
-          {/*data.isWorkshop*/ true ? "✓ BUỔI HỘI THẢO" : "✓ BUỔI HẸN"}
+          {data.isWorkshop ? "✓ BUỔI TƯ VẤN" : "✓ BUỔI HẸN"}
         </span>
       </div>
 
