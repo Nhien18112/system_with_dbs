@@ -3,7 +3,7 @@ import "./App.css";
 import LayoutTutor from "./layout/layoutTutor/Layout";
 import TutorFreeSlot from "./TutorFreeSlot"; // Import component FreeSlot
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppointmentBooking from "./AppointmentBooking"; // Giả định import AppointmentBooking
+import AppointmentBooking from "./StudentAppointment/AppointmentBooking"; // Giả định import AppointmentBooking
 import LayoutStudent from "./layout/layoutSv/LayoutSv";
 import CourseStd from "./pages/feedback/CourseStd";
 import FeedbackPage from "./pages/feedback/FeedbackPage";

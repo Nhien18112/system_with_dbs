@@ -37,6 +37,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/tutor/**").permitAll()
                         .requestMatchers("/api/feedbacks/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        .requestMatchers("/api/tutor/scheduling/appointments/**").permitAll()
 
                         // -----------------------
 

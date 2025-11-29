@@ -1,6 +1,6 @@
 // src/components/Calendar.js (hoặc đường dẫn bạn lưu)
 import React, { useState, useEffect } from "react";
-import "./calendar.css"; // Đảm bảo đúng đường dẫn css
+import "./Calendar.css"; // Đảm bảo đúng đường dẫn css
 
 export default function Calendar({ onSelect, activeDate, availableDates = [] }) {
     const today = new Date();

@@ -43,3 +43,38 @@ export const bookAppointment = async ({
   );
   return res.data;
 };
+
+// Lấy danh sách appointment của student
+export const getStudentAppointments = async (studentId) => {
+  const res = await apiClient.get("/api/student/scheduling/appointments", {
+    params: { studentId },
+  });
+  console.log("Appointments from backend:", res.data);
+  return res.data; // List<Appointment>
+};
+
+// Hủy appointment (dùng meetingId của Appointment)
+export const cancelAppointment = async (
+  meetingId,
+  reason = "Student cancelled appointment"
+) => {
+  const res = await apiClient.post(
+    `/api/student/scheduling/meetings/${meetingId}/cancel`,
+    { reason } // CancelRequest chỉ có reason
+  );
+  return res.data; // String message
+};
+
+// --- BỔ SUNG MỚI ---
+
+// 1. Lấy danh sách Meeting chính thức (Official - bao gồm cả Appointment và Consultation)
+export const getOfficialMeetings = async (studentId) => {
+  const res = await apiClient.get("/api/student/scheduling/meetings/official", {
+    params: { studentId },
+  });
+  // Backend trả về List<Meeting>
+  return res.data;
+};
+
+// 2. Export alias cancelMeeting để dùng cho Meeting List (về bản chất là gọi chung API hủy)
+export const cancelMeeting = cancelAppointment;
