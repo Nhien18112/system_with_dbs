@@ -7,8 +7,7 @@ const StudentHome = () => {
   const navigate = useNavigate();
 
   const handleRegisterTutor = () => {
-    // sau này bạn đổi sang route đăng ký tutor thật
-    alert("Trang đăng ký tutor (demo). Bạn gắn route thật ở đây.");
+    navigate("/student/register-tutor");
   };
 
   return (

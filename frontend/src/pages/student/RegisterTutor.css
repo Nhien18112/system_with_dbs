@@ -1,0 +1,658 @@
+/* Styles for student RegisterTutor page */
+.register-root {
+  padding: 2px 24px; /* reduce top padding to raise content */
+  min-height: calc(100vh - 60px);
+  box-sizing: border-box;
+  background: linear-gradient(180deg, #eef8ff 0%, #f7fbff 100%);
+}
+
+.wizard {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.steps-header { display:flex; align-items:center; position:relative; max-width:920px; margin:0 auto 2px auto; height:42px; }
+.back-area { position:absolute; left:-24px; top:0px; }
+.back-link { background:transparent; border:none; color:#0b4a7a; font-weight:600; cursor:pointer; padding-left:0px; margin-left:0px; }
+.steps-row { display:flex; align-items:center; justify-content:center; margin-bottom:4px; max-width:920px; margin-left:auto; margin-right:auto; }
+.steps { display:flex; align-items:center; gap:24px; justify-content:center; width:100%; padding: 2px 0; }
+.step { display:flex; flex-direction:column; align-items:center; color:#6b7280; min-width:100px; }
+.circle { width:56px; height:56px; border-radius:50%; background:#d1d5db; display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:18px; }
+.step.active .circle { background:#0b4a7a; box-shadow:0 8px 20px rgba(11,74,122,0.14); }
+.step small { margin-top:10px; font-size:13px; color:#334155; }
+
+.connector { width:220px; height:10px; background:#d9dde3; border-radius:6px; margin:0 8px; transition: background-color 220ms ease; transform: translateY(-10px); }
+.connector.active { background:#0b4a7a; }
+
+.card {
+  background: white;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 28px 32px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(10, 50, 90, 0.08);
+}
+
+/* shift down slightly for step 1 to match mock */
+.card.shifted { margin-top: 0px; }
+
+/* === STYLES FOR STEP 2 - TUTOR CARD DESIGN FROM REFERENCE === */
+/* === STYLES FOR STEP 2 - TUTOR CARD DESIGN FROM REFERENCE === */
+.tutor-grid-container {
+  margin-bottom: 16px;
+}
+
+.tutor-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  min-height: 320px;
+}
+
+.background-border {
+  background-color: #f4f5f8;
+  border: 1px dashed;
+  border-color: #704fe6;
+  border-radius: 5px;
+  height: 320px;
+  position: relative;
+  width: 100%;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.background-border:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(112, 79, 230, 0.15);
+}
+
+.background-border .container {
+  border-radius: 5px;
+  height: 140px;
+  left: 12px;
+  overflow: hidden;
+  position: absolute;
+  top: 12px;
+  width: calc(100% - 24px);
+}
+
+.background-border .link {
+  align-items: center;
+  display: flex;
+  height: 140px;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+.background-border .course {
+  background-position: 50% 50%;
+  background-size: cover;
+  border-radius: 5px;
+  flex: 1;
+  height: 140px;
+  width: 100%;
+}
+
+.background-border .background {
+  background-color: #17254e;
+  border-radius: 5px;
+  display: flex;
+  height: 28px;
+  left: 12px;
+  position: absolute;
+  top: 102px;
+  width: 120px;
+}
+
+.background-border .text-wrapper {
+  align-items: center;
+  color: #ffffff;
+  display: flex;
+  font-family: "Sora", sans-serif;
+  font-size: 11px;
+  font-weight: 400;
+  height: 11px;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 11px;
+  margin-left: 20px;
+  margin-top: 8.5px;
+  white-space: nowrap;
+  width: 80px;
+}
+
+.background-border .symbol {
+  align-items: center;
+  color: #fc6441;
+  display: flex;
+  font-family: "Font Awesome 5 Pro", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  height: 12px;
+  justify-content: center;
+  left: 12px;
+  letter-spacing: 0;
+  line-height: 12px;
+  position: absolute;
+  top: 170px;
+  white-space: nowrap;
+  width: 60px;
+}
+
+.background-border .div {
+  align-items: center;
+  color: #4d5756;
+  display: flex;
+  font-family: "Epilogue", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  height: 24px;
+  justify-content: center;
+  left: 75px;
+  letter-spacing: 0;
+  line-height: 24px;
+  position: absolute;
+  top: 164px;
+  white-space: nowrap;
+  width: 24px;
+}
+
+.background-border .paragraph-background {
+  background-color: #ffffff;
+  border-radius: 5px;
+  height: 36px;
+  left: 12px;
+  position: absolute;
+  top: 200px;
+  width: calc(100% - 24px);
+}
+
+.background-border .symbol-2 {
+  align-items: center;
+  color: #000000;
+  display: flex;
+  font-family: "Font Awesome 5 Pro", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  height: 12px;
+  justify-content: center;
+  left: 10px;
+  letter-spacing: 0;
+  line-height: 12px;
+  position: absolute;
+  top: 12px;
+  white-space: nowrap;
+  width: 24px;
+}
+
+.background-border .hk {
+  align-items: center;
+  color: #17254e;
+  display: flex;
+  font-family: "Sora", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  height: 24px;
+  justify-content: center;
+  left: 34px;
+  letter-spacing: 0;
+  line-height: 24px;
+  position: absolute;
+  top: 6px;
+  white-space: nowrap;
+  width: 45px;
+}
+
+.background-border .symbol-3 {
+  align-items: center;
+  color: #000000;
+  display: flex;
+  font-family: "Font Awesome 5 Pro", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  height: 12px;
+  justify-content: center;
+  left: 110px;
+  letter-spacing: 0;
+  line-height: 12px;
+  position: absolute;
+  top: 12px;
+  white-space: nowrap;
+  width: 24px;
+}
+
+.background-border .text-wrapper-2 {
+  align-items: center;
+  color: #17254e;
+  display: flex;
+  font-family: "Sora", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  height: 24px;
+  justify-content: center;
+  left: 134px;
+  letter-spacing: 0;
+  line-height: 24px;
+  position: absolute;
+  top: 6px;
+  white-space: nowrap;
+}
+
+.background-border .image {
+  background-position: 50% 50%;
+  background-size: cover;
+  border: 2px solid;
+  border-color: #704fe6;
+  border-radius: 18px;
+  height: 36px;
+  left: 12px;
+  position: absolute;
+  top: 252px;
+  width: 36px;
+}
+
+.background-border .text-wrapper-3 {
+  align-items: center;
+  color: #17254e;
+  display: flex;
+  font-family: "Epilogue", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  height: 24px;
+  justify-content: center;
+  left: 58px;
+  letter-spacing: 0;
+  line-height: 24px;
+  position: absolute;
+  top: 258px;
+  white-space: nowrap;
+  width: 80px;
+}
+
+/* Sửa vị trí nút Enroll */
+.background-border .link-2 {
+  background-color: #003366;
+  border-radius: 50px;
+  display: flex;
+  gap: 4px;
+  height: 32px;
+  position: absolute;
+  top: 252px;
+  right: 12px; /* Thay đổi từ left sang right */
+  width: 100px;
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+  padding: 0 12px;
+}
+
+.background-border .link-2:hover {
+  background-color: #002244;
+}
+
+.background-border .text-wrapper-4 {
+  align-items: center;
+  color: #ffffff;
+  display: flex;
+  font-family: "Sora", sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  height: 32px;
+  justify-content: center;
+  letter-spacing: 0;
+  line-height: 32px;
+  white-space: nowrap;
+}
+
+.background-border .SVG {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 12px;
+  width: 12px;
+}
+
+.background-border .arrow {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+/* Pagination styles for step 2 */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 24px 0 0 0;
+}
+
+.pagination-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.pagination-dot {
+  width: 40px;
+  height: 40px;
+  border: 2px solid #d1e3f3;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  color: #666;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.pagination-dot:hover {
+  background: #f0f7ff;
+  border-color: #0b4a7a;
+}
+
+.pagination-dot.active {
+  background: #0b4a7a;
+  color: white;
+  border-color: #0b4a7a;
+}
+
+/* Responsive design for step 2 */
+@media (max-width: 900px) {
+  .tutor-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+}
+
+@media (max-width: 600px) {
+  .tutor-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* === END STYLES FOR STEP 2 === */
+
+.tutor-list { display:flex; flex-direction:column; gap:12px; }
+.tutor-list.styled-list { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; min-height: 420px; }
+
+.pager { display:flex; align-items:center; justify-content:center; gap:8px; margin:20px 0 0 0; }
+.pager .dots { display:flex; gap:8px; }
+.pager .dot { background:transparent; border:2px solid #d1e3f3; width:40px; height:40px; border-radius:8px; cursor:pointer; font-weight:600; color:#666; font-size:14px; }
+.pager .dot:hover { background:#f0f7ff; border-color:#0b4a7a; }
+.pager .dot.active { background:#0b4a7a; color:white; border-color:#0b4a7a; }
+.pager .btn { display:none; }
+
+.card h3 { color: #052a4a; margin-top: 0; }
+.subject-row { display:flex; gap:8px; align-items:center; margin:12px 0; }
+.subject-row input { flex:1; padding:10px 12px; border-radius:6px; border:1px solid #d1e3f3; }
+.icon-arrow { background:#fff; border:1px solid #d1e3f3; padding:8px 10px; border-radius:6px; cursor:pointer; }
+.subject-dropdown { position:absolute; top:44px; left:0; background:white; border:1px solid #e6eef8; width:320px; box-shadow:0 8px 22px rgba(10,50,90,0.08); border-radius:8px; z-index:20; }
+.dropdown-item { padding:10px 12px; cursor:pointer; }
+.dropdown-item:hover { background:#f1f7ff; }
+
+.tutor-card { display:flex; gap:12px; align-items:center; padding:12px; border-radius:10px; border:1px solid #e6f0fb; background:#ffffff; }
+.tutor-avatar-img { width:64px; height:64px; border-radius:8px; object-fit:cover; }
+.tutor-info { flex:1; }
+.tutor-name { font-weight:700; color:#11324d; }
+.tutor-rating { color:#ffb84d; }
+
+.tutor-meta { color:#666; font-size:13px; }
+
+.actions { display:flex; gap:12px; justify-content:flex-end; margin-top:18px; }
+.btn { padding:10px 18px; border-radius:8px; border:1px solid #cbd5e1; background:#fff; cursor:pointer; }
+.btn-primary { background:#0b4a7a; color:#fff; border:none; }
+.btn-danger { background:#ef4444; color:#fff; border:none; }
+
+.card.success { text-align:center; }
+.success-icon { font-size:36px; color:#0b4a7a; background:#e6f4ff; width:72px; height:72px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin:0 auto 12px; }
+
+@media (max-width: 900px) {
+  .card { padding:20px; }
+  .subject-dropdown { width:90%; }
+  .connector { width:120px; }
+}
+
+/* === STYLES FOR STEP 3 - CONFIRMATION DESIGN === */
+.confirmation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.confirmation-border {
+  align-items: center;
+  background-color: #ffffff;
+  border: 3px dashed;
+  border-color: #0e2a46;
+  border-radius: 15px;
+  display: flex;
+  flex-direction: column;
+  width: 90%;
+  max-width: 600px;
+  padding: 20px;
+  position: relative;
+  margin: 0 auto;
+}
+
+.confirmation-background {
+  background-color: #2fc7a1;
+  border-radius: 25px;
+  height: 50px;
+  position: relative;
+  width: 50px;
+  margin-bottom: 15px;
+}
+
+.confirmation-icon {
+  height: 25px;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.check-icon {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.confirmation-border-dash {
+  border: 1px dashed;
+  border-color: #2fc7a1;
+  border-radius: 30px;
+  height: 120%;
+  left: -10%;
+  position: absolute;
+  top: -10%;
+  width: 120%;
+}
+
+.confirmation-heading {
+  color: #15d481;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 20px;
+  white-space: nowrap;
+  width: 100%;
+}
+
+.confirmation-content {
+  background-color: #003366;
+  border: 3px dashed;
+  border-color: #000000;
+  border-radius: 15px;
+  padding: 25px;
+  position: relative;
+  width: 90%;
+  margin: 0 auto;
+}
+
+.course-title {
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 20px;
+  line-height: 1.3;
+}
+
+.student-info {
+  color: #ffffff;
+  font-family: "Sora", sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.8;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.info-item {
+  margin-bottom: 8px;
+}
+
+.note-section {
+  margin-bottom: 20px;
+}
+
+.note-title {
+  color: #ffffff;
+  font-family: "Poppins", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.note-content {
+  color: #ffffff;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.4;
+}
+
+.confirmation-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.btn-confirm {
+  background-color: #2fc7a1;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 10px 30px;
+  transition: background-color 0.2s ease;
+  min-width: 120px;
+}
+
+.btn-confirm:hover {
+  background-color: #28b18f;
+}
+
+/* Responsive design for step 3 */
+@media (max-width: 768px) {
+  .confirmation-border {
+    width: 95%;
+    padding: 15px;
+    border-radius: 12px;
+  }
+  
+  .confirmation-content {
+    padding: 20px;
+    border-radius: 12px;
+  }
+  
+  .confirmation-heading {
+    font-size: 14px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  
+  .course-title {
+    font-size: 14px;
+    white-space: normal;
+    line-height: 1.2;
+  }
+  
+  .student-info {
+    font-size: 13px;
+  }
+  
+  .note-title {
+    font-size: 14px;
+  }
+  
+  .note-content {
+    font-size: 12px;
+  }
+  
+  .btn-confirm {
+    font-size: 13px;
+    padding: 8px 25px;
+  }
+  
+  .confirmation-background {
+    height: 45px;
+    width: 45px;
+  }
+  
+  .confirmation-icon {
+    height: 22px;
+    top: 11px;
+    left: 11px;
+    width: 22px;
+  }
+  
+  .check-icon {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 480px) {
+  .confirmation-heading {
+    font-size: 13px;
+  }
+  
+  .course-title {
+    font-size: 13px;
+  }
+  
+  .student-info {
+    font-size: 12px;
+  }
+  
+  .note-title {
+    font-size: 13px;
+  }
+  
+  .note-content {
+    font-size: 11px;
+  }
+  
+  .btn-confirm {
+    font-size: 12px;
+    padding: 8px 20px;
+  }
+}
