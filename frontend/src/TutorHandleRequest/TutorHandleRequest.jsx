@@ -144,9 +144,7 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
                     <span className="meta-separator">•</span>
                     <span className="meta-icon"></span> {timeLabel}
                   </div>
-                  <div className="appointment-sub-meta">
-                    Sinh viên ID: <b>{appt.studentId}</b>
-                  </div>
+
                 </div>
                 <div className="appointment-actions">
                   <span className="status-badge status-pending">PENDING</span>

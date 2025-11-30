@@ -12,6 +12,14 @@
   gap: 24px;
 }
 
+/* FIX LAYOUT DANH SÁCH: Ghi đè style của booking-body để xếp dọc */
+.tutor-page .booking-body {
+  display: flex;
+  flex-direction: column; /* Xếp chồng dọc thay vì ngang */
+  width: 100%;
+  gap: 16px;
+}
+
 /* ----- TABS ----- */
 .tutor-tabs {
   display: flex;
@@ -63,17 +71,21 @@
   border-bottom: 1px solid #e2e8f0;
 }
 
-/* ----- LIST ITEM (Tăng khoảng cách) ----- */
+/* ----- LIST ITEM (FIX FULL WIDTH) ----- */
 .appointment-card {
   background-color: #fff;
   border: 1px solid #e2e8f0;
   border-left: 4px solid #3b82f6;
   border-radius: 10px;
-  padding: 24px; /* Tăng padding */
+  padding: 24px;
+  
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  
+  width: 100%; /* Bắt buộc chiếm hết chiều ngang */
+  box-sizing: border-box; /* Tính padding vào width */
+  
   transition: 0.2s;
   gap: 20px;
 }
@@ -102,7 +114,7 @@
   color: #64748b;
   display: flex;
   align-items: center;
-  gap: 15px; /* Tăng khoảng cách ngày/giờ */
+  gap: 15px; 
 }
 
 .appointment-sub-meta {
@@ -119,7 +131,7 @@
 .appointment-actions {
   display: flex;
   align-items: center;
-  gap: 30px; /* Tách xa Pending và nút Xem */
+  gap: 30px; 
 }
 
 .status-badge {
@@ -141,6 +153,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: 0.2s;
+  white-space: nowrap; /* Giữ chữ không bị xuống dòng */
 }
 .primary-btn-outline:hover {
   background: #003366;
@@ -208,7 +221,7 @@
 .tutor-request-value.highlight-text { color: #003366; font-weight: 600; border-color: #cbd5e1; }
 .tutor-request-value.main-topic { font-size: 16px; color: #0f172a; }
 
-/* ----- REJECT SECTION (Gọn gàng) ----- */
+/* ----- REJECT SECTION ----- */
 .tutor-reject-section {
   padding: 20px;
   background-color: #fffbfb; 
@@ -265,10 +278,10 @@
   cursor: pointer;
 }
 
-/* ----- BOTTOM ACTIONS (Chuẩn form) ----- */
+/* ----- BOTTOM ACTIONS ----- */
 .tutor-request-actions {
   display: flex;
-  justify-content: flex-end; /* Đẩy action sang phải */
+  justify-content: flex-end; 
   align-items: center;
   gap: 12px;
   margin-top: 10px;
@@ -276,7 +289,6 @@
   border-top: 1px solid #e2e8f0;
 }
 
-/* Nút Quay lại nằm bên trái */
 .btn-secondary-outline {
   padding: 10px 20px;
   border-radius: 8px;
@@ -285,7 +297,7 @@
   color: #475569;
   font-weight: 600;
   cursor: pointer;
-  margin-right: auto; /* Đẩy nó sang trái cùng */
+  margin-right: auto;
 }
 .btn-secondary-outline:hover { border-color: #334155; color: #0f172a; }
 

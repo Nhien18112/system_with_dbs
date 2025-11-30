@@ -7,7 +7,8 @@ import AppointmentBooking from "./StudentAppointment/StudentAppointment"; // Gi�
 import LayoutStudent from "./layout/layoutSv/LayoutSv";
 import CourseStd from "./pages/feedback/CourseStd";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
-import Handlerequest from "./pages/handleappointment/Handlerequest";
+//import Handlerequest from "./pages/handleappointment/Handlerequest";
+import TutorHandleRequest from "./TutorHandleRequest/TutorHandleRequest";
 function App() {
   return (
     <BrowserRouter>
@@ -86,7 +87,7 @@ function App() {
           element={
             <LayoutTutor>
               {/* Thay thế bằng component Dashboard thực tế của Tutor */}
-              <Handlerequest />
+              <TutorHandleRequest />
             </LayoutTutor>
           }
         />
