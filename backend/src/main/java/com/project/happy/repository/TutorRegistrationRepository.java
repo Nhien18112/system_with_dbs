@@ -5,11 +5,17 @@ import com.project.happy.entity.TutorRegistrationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 
+/**
+ * Spring Data JPA Repository for TutorRegistrationEntity
+ * Provides database access operations
+ */
+@Repository
 public interface TutorRegistrationRepository extends JpaRepository<TutorRegistrationEntity, Long> {
 
     List<TutorRegistrationEntity> findByStatus(TutorRegistrationStatus status);
