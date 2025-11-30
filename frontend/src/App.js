@@ -3,11 +3,11 @@ import "./App.css";
 import LayoutTutor from "./layout/layoutTutor/Layout";
 import TutorFreeSlot from "./TutorFreeSlot"; // Import component FreeSlot
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import AppointmentBooking from "./StudentAppointment/AppointmentBooking"; // Giả định import AppointmentBooking
+import AppointmentBooking from "./StudentAppointment/StudentAppointment"; // Giả định import AppointmentBooking
 import LayoutStudent from "./layout/layoutSv/LayoutSv";
 import CourseStd from "./pages/feedback/CourseStd";
 import FeedbackPage from "./pages/feedback/FeedbackPage";
-
+import Handlerequest from "./pages/handleappointment/Handlerequest";
 function App() {
   return (
     <BrowserRouter>
@@ -82,11 +82,11 @@ function App() {
 
         {/* [ROUTE BỔ SUNG] Trang Dashboard mặc định của Tutor */}
         <Route
-          path="/tutor"
+          path="/tutor/meetings"
           element={
             <LayoutTutor>
               {/* Thay thế bằng component Dashboard thực tế của Tutor */}
-              <div>Tutor Dashboard</div>
+              <Handlerequest />
             </LayoutTutor>
           }
         />
