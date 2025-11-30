@@ -10,25 +10,29 @@ import {
 
 const TUTOR_ID_DEFAULT = 1;
 
-// Helper: backend gửi date = "2025-11-30"
-const formatDateOnly = (dateStr) => {
-  if (!dateStr) return "";
-  const [y, m, d] = dateStr.split("-");
-  return `${d}/${m}/${y}`;
+// --- HELPERS ---
+const formatDateDisplay = (dateTimeStr) => {
+  if (!dateTimeStr) return "";
+  const dateObj = new Date(dateTimeStr);
+  if (isNaN(dateObj.getTime())) return dateTimeStr; 
+  return dateObj.toLocaleDateString("vi-VN"); 
 };
 
-// Helper: "HH:mm:ss" -> "HH:mm"
-const formatTimeOnly = (timeStr) => (timeStr ? timeStr.slice(0, 5) : "");
+const formatTimeDisplay = (dateTimeStr) => {
+  if (!dateTimeStr) return "";
+  if (dateTimeStr.length <= 8) return dateTimeStr.slice(0, 5);
+  const dateObj = new Date(dateTimeStr);
+  if (isNaN(dateObj.getTime())) return "";
+  return dateObj.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", hour12: false });
+};
 
 const formatRangeForList = (appt) => {
   if (!appt) return { dateLabel: "", timeLabel: "" };
-  const dateLabel = formatDateOnly(appt.date);
-  const start = formatTimeOnly(appt.startTime);
-  const end = formatTimeOnly(appt.endTime);
-  return {
-    dateLabel,
-    timeLabel: `${start} - ${end}`,
-  };
+  const dateSource = appt.startTime || appt.date;
+  const dateLabel = formatDateDisplay(dateSource);
+  const start = formatTimeDisplay(appt.startTime);
+  const end = formatTimeDisplay(appt.endTime);
+  return { dateLabel, timeLabel: `${start} - ${end}` };
 };
 
 function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
@@ -41,24 +45,29 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
   const [returnSlot, setReturnSlot] = useState("no"); 
   const [statusMsg, setStatusMsg] = useState("");
 
-  // ----------------- Load pending list -----------------
+  // ----------------- Load -----------------
   const loadPending = async () => {
     try {
       setLoading(true);
       setErrorMsg("");
       const data = await getPendingAppointments(tutorId || TUTOR_ID_DEFAULT);
-      setAppointments(Array.isArray(data) ? data : []);
+      if (Array.isArray(data)) {
+        const onlyPending = data.filter(appt => 
+            (appt.appointmentStatus || appt.status) === 'PENDING'
+        );
+        setAppointments(onlyPending);
+      } else {
+        setAppointments([]);
+      }
     } catch (err) {
-      console.error("Load pending appointments error:", err);
-      setErrorMsg("Không tải được danh sách yêu cầu lịch hẹn.");
+      console.error("Load error:", err);
+      setErrorMsg("Không tải được danh sách yêu cầu.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadPending();
-  }, [tutorId]);
+  useEffect(() => { loadPending(); }, [tutorId]);
 
   // ----------------- Actions -----------------
   const handleViewDetail = (appt) => {
@@ -73,90 +82,75 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
     setRejectReason("");
     setReturnSlot("no");
     setStatusMsg("");
-    loadPending(); // Refresh list khi quay lại
+    loadPending();
   };
 
   const handleApprove = async () => {
     if (!selected) return;
+    if (!window.confirm("Bạn có chắc chắn muốn PHÊ DUYỆT yêu cầu này?")) return;
     try {
-      setStatusMsg("");
+      setStatusMsg("Đang xử lý...");
       await approveAppointment(selected.meetingId, tutorId || TUTOR_ID_DEFAULT);
-      alert("Phê duyệt lịch hẹn thành công!"); // Dùng alert cho chắc chắn
+      alert("Đã phê duyệt thành công!");
       handleBack(); 
     } catch (err) {
-      console.error("Approve error:", err);
-      const status = err.response?.status;
       const msg = err.response?.data || "Lỗi khi phê duyệt.";
-      setStatusMsg(`Lỗi (status ${status}): ${msg}`);
+      setStatusMsg(`Lỗi: ${msg}`);
     }
   };
 
   const handleReject = async () => {
     if (!selected) return;
     if (!rejectReason.trim()) {
-      setStatusMsg("Vui lòng nhập lý do từ chối.");
+      alert("Vui lòng nhập lý do từ chối.");
       return;
     }
-
+    if (!window.confirm("Bạn có chắc chắn muốn TỪ CHỐI yêu cầu này?")) return;
     try {
-      setStatusMsg("");
-      const shouldReturnSlot = returnSlot === "yes";
-      await rejectAppointment(
-        selected.meetingId,
-        tutorId || TUTOR_ID_DEFAULT,
-        rejectReason.trim(),
-        shouldReturnSlot
-      );
-      
-      alert(`Đã từ chối lịch hẹn${shouldReturnSlot ? " và trả lại slot rảnh" : ""}.`);
+      setStatusMsg("Đang xử lý...");
+      await rejectAppointment(selected.meetingId, tutorId || TUTOR_ID_DEFAULT, rejectReason.trim());
+      if (returnSlot === "yes") {
+         // Gọi API trả slot ở đây nếu có
+         console.log("Returning slot...");
+      }
+      alert("Đã từ chối lịch hẹn.");
       handleBack();
     } catch (err) {
-      console.error("Reject error:", err);
-      const status = err.response?.status;
       const msg = err.response?.data || "Lỗi khi từ chối.";
-      setStatusMsg(`Lỗi (status ${status}): ${msg}`);
+      setStatusMsg(`Lỗi: ${msg}`);
     }
   };
 
-  // ----------------- Render list card -----------------
+  // ----------------- Render List -----------------
   const renderList = () => (
     <div className="booking-card">
-      <h3 className="card-section-title">Danh sách yêu cầu đặt lịch hẹn</h3>
-
+      <h3 className="card-section-title">Danh sách yêu cầu chờ duyệt</h3>
       <div className="booking-body">
-        {loading && <p>Đang tải...</p>}
+        {loading && <p>Đang tải dữ liệu...</p>}
         {errorMsg && <p className="error-text">{errorMsg}</p>}
-
         {!loading && !errorMsg && !appointments.length && (
-          <p>Hiện chưa có yêu cầu lịch hẹn nào.</p>
+          <div style={{textAlign: 'center', padding: '40px', color: '#666'}}>
+            Hiện không có yêu cầu nào đang chờ duyệt.
+          </div>
         )}
-
-        {!loading &&
-          !errorMsg &&
-          appointments.map((appt) => {
+        {!loading && appointments.map((appt) => {
             const { dateLabel, timeLabel } = formatRangeForList(appt);
             return (
               <div key={appt.meetingId} className="appointment-card">
                 <div className="appointment-main">
-                  <div className="appointment-topic">{appt.topic}</div>
+                  <div className="appointment-topic">{appt.topic || "Không có tiêu đề"}</div>
                   <div className="appointment-meta">
-                    <span>{dateLabel}</span>
-                    <span> • </span>
-                    <span>{timeLabel}</span>
-                    <span> • </span>
-                    <span style={{fontWeight: 500, color: '#003366'}}>SV ID: {appt.studentId}</span>
+                    <span className="meta-icon"></span> {dateLabel}
+                    <span className="meta-separator">•</span>
+                    <span className="meta-icon"></span> {timeLabel}
+                  </div>
+                  <div className="appointment-sub-meta">
+                    Sinh viên ID: <b>{appt.studentId}</b>
                   </div>
                 </div>
-
                 <div className="appointment-actions">
-                  <span className="status-badge status-pending">
-                    {(appt.appointmentStatus || "PENDING").toUpperCase()}
-                  </span>
-                  <button
-                    type="button"
-                    className="primary-btn-outline"
-                    onClick={() => handleViewDetail(appt)}
-                  >
+                  <span className="status-badge status-pending">PENDING</span>
+                  <button className="primary-btn-outline" onClick={() => handleViewDetail(appt)}>
                     Xem chi tiết
                   </button>
                 </div>
@@ -167,95 +161,91 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
     </div>
   );
 
-  // ----------------- Render detail card -----------------
+  // ----------------- Render Detail -----------------
   const renderDetail = () => {
     if (!selected) return null;
     const { dateLabel, timeLabel } = formatRangeForList(selected);
 
     return (
       <div className="booking-card">
-        <h3 className="card-section-title">Xử lí yêu cầu # {selected.meetingId}</h3>
+        <div className="detail-header">
+            <button className="btn-back-icon" onClick={handleBack}>←</button>
+            <h3 className="card-section-title" style={{marginBottom:0, border: 'none'}}>
+                Chi tiết yêu cầu #{selected.meetingId}
+            </h3>
+        </div>
+        <hr className="divider-light"/>
 
         <div className="tutor-request-grid">
-          {/* Thông tin chi tiết */}
-          <div className="tutor-request-row">
-            <div className="tutor-request-label">Họ tên sinh viên</div>
-            <div className="tutor-request-value">Sinh viên ID: {selected.studentId}</div>
+          {/* Thông tin chính */}
+          <div className="info-group">
+              <div className="tutor-request-row">
+                <div className="tutor-request-label">Họ tên sinh viên</div>
+                <div className="tutor-request-value highlight-text">Sinh viên ID: {selected.studentId}</div>
+              </div>
+              <div className="tutor-request-row">
+                <div className="tutor-request-label">Nội dung buổi hẹn</div>
+                <div className="tutor-request-value main-topic">{selected.topic || "(Không có nội dung)"}</div>
+              </div>
           </div>
 
-          <div className="tutor-request-row">
-            <div className="tutor-request-label">Nội dung</div>
-            <div className="tutor-request-value">{selected.topic || ""}</div>
+          <div className="info-group two-col">
+              <div className="tutor-request-row">
+                <div className="tutor-request-label">Ngày diễn ra</div>
+                <div className="tutor-request-value">{dateLabel}</div>
+              </div>
+              <div className="tutor-request-row">
+                <div className="tutor-request-label">Khung giờ</div>
+                <div className="tutor-request-value">{timeLabel}</div>
+              </div>
           </div>
 
-          <div className="tutor-request-row">
-            <div className="tutor-request-label">Ngày</div>
-            <div className="tutor-request-value">{dateLabel}</div>
-          </div>
-
-          <div className="tutor-request-row">
-            <div className="tutor-request-label">Thời gian</div>
-            <div className="tutor-request-value">{timeLabel}</div>
-          </div>
-
-          <div className="tutor-request-row">
-            <div className="tutor-request-label">Hình thức</div>
-            <div className="tutor-request-value">{selected.meetingType || "APPOINTMENT"}</div>
-          </div>
-
-          {/* Form từ chối */}
+          {/* Form Từ chối (Gọn gàng) */}
           <div className="tutor-reject-section">
-            <div className="tutor-request-label" style={{color: '#b91c1c'}}>Khu vực Từ chối (Nếu cần)</div>
+            <label className="tutor-request-label" style={{color: '#ef4444'}}>Từ chối yêu cầu (Nếu cần)</label>
             <textarea
               className="tutor-reject-textarea"
               placeholder="Nhập lý do từ chối tại đây..."
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
-
             <div className="tutor-return-slot">
-              <div className="tutor-request-label" style={{fontSize: '13px', fontWeight: 500}}>
-                Sau khi từ chối, bạn có muốn trả lại slot này thành slot rảnh không?
-              </div>
+              <span className="slot-question">Trả lại slot rảnh?</span>
               <div className="tutor-return-slot-options">
                 <label className="radio-option">
-                  <input
-                    type="radio"
-                    name="returnSlot"
-                    value="yes"
+                  <input type="radio" name="returnSlot" value="yes"
                     checked={returnSlot === "yes"}
                     onChange={(e) => setReturnSlot(e.target.value)}
-                  />
-                  Có, trả lại slot
+                  /> Có
                 </label>
                 <label className="radio-option">
-                  <input
-                    type="radio"
-                    name="returnSlot"
-                    value="no"
+                  <input type="radio" name="returnSlot" value="no"
                     checked={returnSlot === "no"}
                     onChange={(e) => setReturnSlot(e.target.value)}
-                  />
-                  Không (Giữ bận)
+                  /> Không (Giữ bận)
                 </label>
               </div>
             </div>
           </div>
 
-          {statusMsg && <p className={statusMsg.includes("Lỗi") ? "error-text" : "success-text"}>{statusMsg}</p>}
+          {statusMsg && (
+            <div className={`status-message ${statusMsg.includes("Lỗi") ? "msg-error" : "msg-success"}`}>
+                {statusMsg}
+            </div>
+          )}
 
+          {/* Action Buttons (Compact Bottom Bar) */}
           <div className="tutor-request-actions">
             <button type="button" className="btn-secondary-outline" onClick={handleBack}>
               ← Quay lại
             </button>
-
-            <div className="tutor-request-actions-right">
-              <button type="button" className="btn-danger-outline" onClick={handleReject}>
-                Từ chối
-              </button>
-              <button type="button" className="btn-primary" onClick={handleApprove}>
-                Phê duyệt
-              </button>
+            <div style={{display:'flex', gap:'10px'}}>
+                <button type="button" className="btn-danger-outline" onClick={handleReject}>
+                    Từ chối
+                </button>
+                <button type="button" className="btn-primary" onClick={handleApprove}>
+                    Phê duyệt
+                </button>
             </div>
           </div>
         </div>
@@ -263,17 +253,13 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
     );
   };
 
-  // ----------------- Page -----------------
   return (
     <div className="tutor-page">
-      {/* Tabs */}
       <div className="tutor-tabs">
         <button className="tab-btn">Danh sách buổi gặp mặt</button>
         <button className="tab-btn">Tạo buổi tư vấn</button>
         <button className="tab-btn tab-btn-active">Xử lí yêu cầu lịch hẹn</button>
       </div>
-
-      {/* Content */}
       {!selected ? renderList() : renderDetail()}
     </div>
   );

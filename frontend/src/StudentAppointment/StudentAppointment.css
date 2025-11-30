@@ -3,13 +3,10 @@
 /* ----- GLOBAL ----- */
 .booking-page {
   padding: 30px 40px;
-  /* background: linear-gradient(135deg, #e9f0ff, #f7faff); */
+  background: linear-gradient(135deg, #e9f0ff, #f7faff);
   min-height: calc(100vh - 64px);
-  
-  /* SỬA QUAN TRỌNG: Bắt buộc chiếm hết chiều ngang */
   width: 100%; 
   box-sizing: border-box; 
-  
   display: flex;
   flex-direction: column;
   gap: 20px;
@@ -21,7 +18,7 @@
   gap: 12px;
   margin-bottom: 5px;
   width: 100%;
-  max-width: 800px;
+  max-width: 800px; 
 }
 
 .tab-btn {
@@ -36,7 +33,7 @@
   font-size: 15px;
   flex: 1;
   text-align: center;
-  white-space: nowrap;
+  white-space: nowrap; 
   overflow: hidden;
   text-overflow: ellipsis;
   display: flex;
@@ -78,7 +75,7 @@
   border-radius: 12px;
   background-color: white;
   border: 1px solid #cce0ff;
-  width: fit-content; /* Chỉ rộng bằng nội dung */
+  width: fit-content;
   box-shadow: 0 2px 5px rgba(0,0,0,0.05);
 }
 .avatar-circle {
@@ -112,13 +109,10 @@
   background: #ffffffcc;
   border-radius: 16px;
   padding: 25px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
   backdrop-filter: blur(6px);
-  
-  /* SỬA: Đảm bảo card luôn căng full chiều ngang của cha */
   width: 100%;
   box-sizing: border-box;
-  
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -162,7 +156,7 @@
   display: flex;
   flex-direction: column;
   gap: 15px;
-  width: 100%;
+  width: 100%; 
 }
 
 .form-group {
@@ -176,8 +170,7 @@
   font-size: 14px;
 }
 
-.form-input,
-select.form-input {
+.form-input, select.form-input {
   width: 100%;
   padding: 10px 12px;
   border-radius: 8px;
@@ -186,7 +179,7 @@ select.form-input {
   outline: none;
   transition: 0.2s;
   background: #fff;
-  box-sizing: border-box;
+  box-sizing: border-box; 
 }
 
 .form-input:focus {
@@ -215,16 +208,8 @@ select.form-input {
 }
 
 /* ----- MESSAGES & LIST ----- */
-.error-text {
-  color: #d32f2f;
-  font-size: 14px;
-  margin-top: 5px;
-}
-.success-text {
-  color: #2e7d32;
-  font-size: 14px;
-  margin-top: 5px;
-}
+.error-text { color: #d32f2f; font-size: 14px; margin-top: 5px; }
+.success-text { color: #2e7d32; font-size: 14px; margin-top: 5px; }
 
 .appointment-list {
   display: flex;
@@ -244,7 +229,7 @@ select.form-input {
 }
 .appointment-card:hover {
   border-color: #003366;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
 }
 
 .appointment-topic {
@@ -273,18 +258,9 @@ select.form-input {
   font-weight: 600;
   text-transform: uppercase;
 }
-.status-pending {
-  background-color: #fff8e1;
-  color: #f57c00;
-}
-.status-approved {
-  background-color: #e8f5e9;
-  color: #2e7d32;
-}
-.status-rejected {
-  background-color: #ffebee;
-  color: #c62828;
-}
+.status-pending { background-color: #fff8e1; color: #f57c00; }
+.status-approved { background-color: #e8f5e9; color: #2e7d32; }
+.status-rejected { background-color: #ffebee; color: #c62828; }
 
 .btn-cancel-appointment {
   padding: 4px 10px;
@@ -343,8 +319,7 @@ select.form-input {
   color: #003366;
 }
 
-.meeting-time,
-.meeting-detail {
+.meeting-time, .meeting-detail {
   font-size: 14px;
   color: #4b5563;
 }
