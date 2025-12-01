@@ -278,7 +278,7 @@
   color: white;
 }
 
-/* --- MEETING LIST STYLES (ĐÃ CHỈNH SỬA) --- */
+/* --- MEETING LIST STYLES  --- */
 .meeting-list-container {
   display: flex;
   flex-direction: column;
@@ -287,7 +287,6 @@
 }
 
 .meeting-card {
-  /* Giữ nguyên nền xanh nhạt và viền trái đậm */
   background-color: #f0f7ff; 
   border-radius: 12px;
   padding: 20px 24px;
@@ -342,18 +341,18 @@
   white-space: nowrap;
 }
 
-/* Style cho Buổi hẹn (Giữ nguyên) */
+
 .badge-appointment {
   background-color: #ffffff;
-  color: #059669; /* Xanh lá */
+  color: #059669;
   border: 1px solid #059669;
 }
 
-/* UPDATE: Style cho Hội thảo/Tư vấn (Chuyển sang Xanh Lá giống Appointment) */
+
 .badge-consultation {
   background-color: #ffffff;
-  color: #059669; /* Đổi thành xanh lá */
-  border: 1px solid #059669; /* Đổi viền thành xanh lá */
+  color: #059669; 
+  border: 1px solid #059669; 
 }
 
 .btn-cancel-meeting {
@@ -468,4 +467,73 @@
   border-radius: 8px;
   font-weight: 600;
   cursor: pointer;
+}
+
+.time-status-label {
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    min-width: 100px;
+    text-align: center;
+}
+
+
+.time-status-past {
+    background-color: #f3f4f6;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+}
+
+
+.time-status-ongoing {
+    background-color: #eff6ff;
+    color: #2563eb;
+    border: 1px solid #bfdbfe;
+    animation: pulse 2s infinite;
+}
+
+
+.time-status-upcoming {
+    background-color: #fff7ed;
+    color: #ea580c;
+    border: 1px solid #ffedd5;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.4); }
+    70% { box-shadow: 0 0 0 6px rgba(37, 99, 235, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+
+.btn-mode-switch {
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+    border: none;
+}
+
+
+.btn-cancel-mode {
+    background-color: #fee2e2;
+    color: #b91c1c;
+    border: 1px solid #fecaca;
+}
+.btn-cancel-mode:hover {
+    background-color: #fecaca;
+}
+
+
+.btn-back-mode {
+    background-color: #f3f4f6;
+    color: #374151;
+    border: 1px solid #d1d5db;
+}
+.btn-back-mode:hover {
+    background-color: #e5e7eb;
 }

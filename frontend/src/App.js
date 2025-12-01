@@ -7,12 +7,15 @@ import SsoLoginPage from "./pages/SsoLoginPage";
 import SsoForgotPage from "./pages/SsoForgotPage";
 import RegisterTutor from "./pages/student/RegisterTutor";
 
+
 import Layout from "./Layout";                 // tutor layout
 import TutorHome from "./pages/tutor/TutorHome";
 import TutorMeetings from "./pages/tutor/TutorMeetings";
 import TutorCourses from "./pages/tutor/TutorCourses";
 import TutorProfile from "./pages/tutor/TutorProfile";
 import TutorFreeSlot from "./TutorFreeSlot";
+import TutorHandleRequest from "./TutorHandleRequest/TutorHandleRequest";
+
 
 // ==== STUDENT IMPORTS ====
 import StudentLayout from "./pages/student/StudentLayout";
@@ -20,6 +23,8 @@ import StudentHome from "./pages/student/StudentHome";
 import StudentMeetings from "./pages/student/StudentMeetings";
 import StudentCourses from "./pages/student/StudentCourses";
 import StudentProfile from "./pages/student/StudentProfile";
+import StudentAppointment from "./StudentAppointment/StudentAppointment";
+import FeedbackPage from "./pages/feedback/FeedbackPage";
 
 function App() {
   return (
@@ -34,7 +39,7 @@ function App() {
       {/* ==== STUDENT (dùng StudentLayout + Outlet) ==== */}
       <Route path="/student" element={<StudentLayout />}>
         <Route index element={<StudentHome />} />
-        <Route path="meetings" element={<StudentMeetings />} />
+        <Route path="meetings" element={<StudentAppointment />} />
         <Route path="courses" element={<StudentCourses />} />
         <Route path="profile" element={<StudentProfile />} />
         <Route path="register-tutor" element={<RegisterTutor />} />
@@ -65,6 +70,15 @@ function App() {
           </Layout>
         }
       />
+       <Route
+        path="/tutor/handle"
+        element={
+          <Layout>
+            <TutorHandleRequest/>
+          </Layout>
+        }
+      />
+
       <Route
         path="/tutor/profile"
         element={

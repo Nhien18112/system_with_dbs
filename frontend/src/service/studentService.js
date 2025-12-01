@@ -76,5 +76,19 @@ export const getOfficialMeetings = async (studentId) => {
   return res.data;
 };
 
-// 2. Export alias cancelMeeting để dùng cho Meeting List (về bản chất là gọi chung API hủy)
-export const cancelMeeting = cancelAppointment;
+export const getCancelableMeetings = async (studentId) => {
+  const res = await apiClient.get("/api/student/scheduling/meetings/cancelable", {
+    params: { studentId },
+  });
+  return res.data;
+};
+
+// Hủy Meeting
+export const cancelMeeting = async (meetingId, reason) => {
+  const res = await apiClient.post(
+    `/api/student/scheduling/meetings/${meetingId}/cancel`,
+    { reason }
+  );
+  return res.data;
+};
+

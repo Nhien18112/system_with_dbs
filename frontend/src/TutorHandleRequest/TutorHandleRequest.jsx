@@ -41,9 +41,12 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
   const [errorMsg, setErrorMsg] = useState("");
 
   const [selected, setSelected] = useState(null); 
+  const [statusMsg, setStatusMsg] = useState("");
+
+  // Modal State
+  const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [returnSlot, setReturnSlot] = useState("no"); 
-  const [statusMsg, setStatusMsg] = useState("");
 
   // ----------------- Load -----------------
   const loadPending = async () => {
@@ -72,15 +75,11 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
   // ----------------- Actions -----------------
   const handleViewDetail = (appt) => {
     setSelected(appt);
-    setRejectReason("");
-    setReturnSlot("no");
     setStatusMsg("");
   };
 
   const handleBack = () => {
     setSelected(null);
-    setRejectReason("");
-    setReturnSlot("no");
     setStatusMsg("");
     loadPending();
   };
@@ -99,25 +98,36 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
     }
   };
 
-  const handleReject = async () => {
-    if (!selected) return;
+
+  const handleOpenRejectModal = () => {
+    setRejectReason("");
+    setReturnSlot("no");
+    setShowRejectModal(true);
+  }
+
+
+  const handleCloseRejectModal = () => {
+    setShowRejectModal(false);
+  }
+
+
+  const handleConfirmReject = async () => {
     if (!rejectReason.trim()) {
       alert("Vui lòng nhập lý do từ chối.");
       return;
     }
-    if (!window.confirm("Bạn có chắc chắn muốn TỪ CHỐI yêu cầu này?")) return;
+    
     try {
-      setStatusMsg("Đang xử lý...");
       await rejectAppointment(selected.meetingId, tutorId || TUTOR_ID_DEFAULT, rejectReason.trim());
       if (returnSlot === "yes") {
-         // Gọi API trả slot ở đây nếu có
          console.log("Returning slot...");
       }
-      alert("Đã từ chối lịch hẹn.");
+      alert("Đã từ chối yêu cầu.");
+      handleCloseRejectModal();
       handleBack();
     } catch (err) {
       const msg = err.response?.data || "Lỗi khi từ chối.";
-      setStatusMsg(`Lỗi: ${msg}`);
+      alert(msg); 
     }
   };
 
@@ -140,11 +150,12 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
                 <div className="appointment-main">
                   <div className="appointment-topic">{appt.topic || "Không có tiêu đề"}</div>
                   <div className="appointment-meta">
-                    <span className="meta-icon"></span> {dateLabel}
+                    <span className="meta-icon">Ngày: </span> {dateLabel}
                     <span className="meta-separator">•</span>
-                    <span className="meta-icon"></span> {timeLabel}
+                    <span className="meta-icon">Khung giờ: </span> {timeLabel}
                   </div>
-
+                  <div className="appointment-sub-meta">
+                  </div>
                 </div>
                 <div className="appointment-actions">
                   <span className="status-badge status-pending">PENDING</span>
@@ -198,47 +209,20 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
               </div>
           </div>
 
-          {/* Form Từ chối (Gọn gàng) */}
-          <div className="tutor-reject-section">
-            <label className="tutor-request-label" style={{color: '#ef4444'}}>Từ chối yêu cầu (Nếu cần)</label>
-            <textarea
-              className="tutor-reject-textarea"
-              placeholder="Nhập lý do từ chối tại đây..."
-              value={rejectReason}
-              onChange={(e) => setRejectReason(e.target.value)}
-            />
-            <div className="tutor-return-slot">
-              <span className="slot-question">Trả lại slot rảnh?</span>
-              <div className="tutor-return-slot-options">
-                <label className="radio-option">
-                  <input type="radio" name="returnSlot" value="yes"
-                    checked={returnSlot === "yes"}
-                    onChange={(e) => setReturnSlot(e.target.value)}
-                  /> Có
-                </label>
-                <label className="radio-option">
-                  <input type="radio" name="returnSlot" value="no"
-                    checked={returnSlot === "no"}
-                    onChange={(e) => setReturnSlot(e.target.value)}
-                  /> Không (Giữ bận)
-                </label>
-              </div>
-            </div>
-          </div>
-
           {statusMsg && (
             <div className={`status-message ${statusMsg.includes("Lỗi") ? "msg-error" : "msg-success"}`}>
                 {statusMsg}
             </div>
           )}
 
-          {/* Action Buttons (Compact Bottom Bar) */}
+          {/* Action Buttons */}
           <div className="tutor-request-actions">
             <button type="button" className="btn-secondary-outline" onClick={handleBack}>
               ← Quay lại
             </button>
             <div style={{display:'flex', gap:'10px'}}>
-                <button type="button" className="btn-danger-outline" onClick={handleReject}>
+                {}
+                <button type="button" className="btn-danger-outline" onClick={handleOpenRejectModal}>
                     Từ chối
                 </button>
                 <button type="button" className="btn-primary" onClick={handleApprove}>
@@ -259,6 +243,49 @@ function TutorHandleRequest({ tutorId = TUTOR_ID_DEFAULT }) {
         <button className="tab-btn tab-btn-active">Xử lí yêu cầu lịch hẹn</button>
       </div>
       {!selected ? renderList() : renderDetail()}
+
+      {/* --- REJECT MODAL --- */}
+      {showRejectModal && (
+        <div className="modal-overlay" onClick={handleCloseRejectModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">Từ chối yêu cầu</div>
+            <div className="modal-body">
+              <div>
+                <label className="modal-label">Lý do từ chối:</label>
+                <textarea
+                  className="tutor-reject-textarea"
+                  placeholder="Nhập lý do..."
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              
+              <div>
+                <label className="modal-label">Bạn có muốn trả lại slot này thành slot rảnh?</label>
+                <div className="tutor-return-slot-options">
+                  <label className="radio-option">
+                    <input type="radio" name="returnSlot" value="yes"
+                      checked={returnSlot === "yes"}
+                      onChange={(e) => setReturnSlot(e.target.value)}
+                    /> Có.
+                  </label>
+                  <label className="radio-option">
+                    <input type="radio" name="returnSlot" value="no"
+                      checked={returnSlot === "no"}
+                      onChange={(e) => setReturnSlot(e.target.value)}
+                    /> Không.
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn-modal-close" onClick={handleCloseRejectModal}>Đóng</button>
+              <button className="btn-modal-confirm-reject" onClick={handleConfirmReject}>Xác nhận từ chối</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
