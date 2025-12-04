@@ -1,17 +1,25 @@
 package com.project.happy.controller.tutor;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-import com.project.happy.facade.TutorRegistrationFacade;
-import com.project.happy.service.tutor.MatchingEngine;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.happy.entity.TutorRegistrationEntity;
+import com.project.happy.facade.TutorRegistrationFacade;
+import com.project.happy.service.tutor.MatchingEngine;
 
 import jakarta.validation.Valid;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tutor-registration")
@@ -92,5 +100,22 @@ public class TutorRegistrationController {
         boolean ok = facade.reject(registrationId, request.tutorId(), request.reason());
         if (ok) return ResponseEntity.ok(Map.of("result", "rejected"));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Không thể từ chối (không tồn tại hoặc quyền)"));
+    }
+
+    @GetMapping("/student/{studentId}/my-tutor")
+    public ResponseEntity<?> getMyTutor(@PathVariable Integer studentId) {
+        TutorRegistrationEntity registration = facade.getApprovedTutor(studentId); // Lưu ý: Bạn cần thêm hàm này vào Facade nữa hoặc gọi Service trực tiếp
+        
+        if (registration == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Bạn chưa có Tutor nào được duyệt."));
+        }
+        
+        // Trả về thông tin cơ bản
+        return ResponseEntity.ok(Map.of(
+            "tutorId", registration.getTutorId(),
+            "subjectId", registration.getSubjectId(),
+            "status", registration.getStatus()
+        ));
     }
 }

@@ -1,18 +1,19 @@
 package com.project.happy.service.tutor;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
+
 import com.project.happy.entity.TutorRegistrationEntity;
 import com.project.happy.entity.TutorRegistrationStatus;
 import com.project.happy.repository.ITutorRegistrationRepository;
 import com.project.happy.repository.UserRepository;
-import org.springframework.web.server.ResponseStatusException;
-import org.springframework.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Implementation of ITutorRegistrationService
@@ -33,6 +34,7 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         this.userRepository = userRepository;
     }
 
+    @Override
     @Transactional
     public TutorRegistrationEntity createRequest(Integer studentId, Integer subjectId, Integer tutorId) {
         // Validate roles in DB before inserting to avoid DB trigger errors
@@ -61,6 +63,7 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         return repository.save(entity);
     }
 
+    @Override
     @Transactional
     public boolean cancelRequest(Long registrationId, Integer studentId) {
         Optional<TutorRegistrationEntity> opt = repository.findById(registrationId);
@@ -75,16 +78,19 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         return false;
     }
 
+    @Override
     public List<TutorRegistrationEntity> findPendingOlderThan(LocalDateTime cutoff) {
         return repository.findByStatusAndRequestTimeBefore(TutorRegistrationStatus.PENDING, cutoff);
     }
 
+    @Override
     @Transactional
     public void approveRegistration(TutorRegistrationEntity registration) {
         registration.setStatus(TutorRegistrationStatus.APPROVED);
         repository.save(registration);
     }
 
+    @Override
     public List<MatchingEngine.TutorSuggestion> suggestTutors(String subject) {
         return matchingEngine.suggestTutors(subject);
     }
@@ -123,5 +129,17 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         r.setReasonForRejection(reason);
         repository.save(r);
         return true;
+    }
+
+    @Override
+    public TutorRegistrationEntity getApprovedTutor(Integer studentId) {
+        // Gọi hàm có sẵn trong Repository
+        List<TutorRegistrationEntity> list = repository.findByStudentIdAndStatus(studentId, TutorRegistrationStatus.APPROVED);
+        
+        if (list.isEmpty()) {
+            return null; // Hoặc throw Exception nếu muốn
+        }
+        
+        return list.get(0);
     }
 }
