@@ -119,7 +119,7 @@ const formatDateForInput = (d) => {
 
 const toLocalDateString = (d) => formatDateForInput(d);
 
-function StudentAppointment({ studentId = 1, tutorId = 1 }) {
+function StudentAppointment({ studentId = 5, tutorId = 1 }) {
   // --------- STATE CHÍNH ----------
   const [activeTab, setActiveTab] = useState("list");
 
@@ -155,7 +155,7 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
 
       if (isCancelMode) {
         try {
-          data = await getCancelableMeetings(studentId || 1);
+          data = await getCancelableMeetings(studentId || 5);
         } catch (e) {
           console.warn(
             "API getCancelableMeetings lỗi, fallback mock cancelable"
@@ -170,7 +170,7 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
         }
       } else {
         try {
-          data = await getOfficialMeetings(studentId || 1);
+          data = await getOfficialMeetings(studentId || 5);
         } catch (e) {
           console.warn(
             "API getOfficialMeetings lỗi, fallback mock all meetings"
@@ -263,6 +263,16 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
     e.preventDefault();
     setStatusMsg("");
     setErrorMsg("");
+    
+    // Debug: Check topic type
+    console.log("handleSubmit - topic:", topic);
+    console.log("handleSubmit - topic typeof:", typeof topic);
+    if (typeof topic !== 'string') {
+      console.error("ERROR: topic is not a string!", topic);
+      setErrorMsg("Lỗi: Nội dung không hợp lệ (phải là chuỗi)");
+      return;
+    }
+    
     if (!time || !preferredStart || !preferredEnd || !topic.trim()) {
       setErrorMsg("Vui lòng điền đủ thông tin.");
       return;
@@ -271,7 +281,7 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
     const studentTimeRange = `${preferredStart} - ${preferredEnd}`;
     try {
       await bookAppointment({
-        studentId: studentId || 1,
+        studentId: studentId || 5,
         tutorId: tutorId || 1,
         dateKey,
         timeRange: studentTimeRange,
@@ -279,7 +289,20 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
       });
       setStatusMsg("Đặt lịch thành công! Vui lòng chờ Tutor duyệt.");
     } catch (err) {
-      setErrorMsg(`Lỗi: ${err.response?.data || "Server error"}`);
+      // Handle error - convert object to string if needed
+      let errorMsg = "Server error";
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMsg = err.response.data;
+        } else if (err.response.data.error) {
+          errorMsg = err.response.data.error;
+        } else if (err.response.data.message) {
+          errorMsg = err.response.data.message;
+        } else {
+          errorMsg = JSON.stringify(err.response.data);
+        }
+      }
+      setErrorMsg(`Lỗi: ${errorMsg}`);
     }
   };
 
@@ -335,6 +358,13 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
     if (loadingMeetings) return <p>Đang tải danh sách...</p>;
 
     const visibleMeetings = filterActiveMeetings(meetingList);
+    
+    // Debug log to check meeting data structure
+    if (visibleMeetings.length > 0) {
+      console.log("Meeting data structure:", visibleMeetings[0]);
+      console.log("Topic value:", visibleMeetings[0].topic);
+      console.log("Topic typeof:", typeof visibleMeetings[0].topic);
+    }
 
     if (visibleMeetings.length === 0)
       return <p>Không có buổi gặp mặt nào.</p>;
@@ -353,7 +383,7 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
           return (
             <div key={mt.meetingId} className="meeting-card">
               <div className="meeting-info">
-                <div className="meeting-topic">Chủ đề: {mt.topic}</div>
+                <div className="meeting-topic">Chủ đề: {typeof mt.topic === 'string' ? mt.topic : JSON.stringify(mt.topic)}</div>
                 <div className="meeting-time">
                   Thời gian:{" "}
                   {formatDateTimeFull(mt.startTime, mt.endTime)}
@@ -557,8 +587,11 @@ function StudentAppointment({ studentId = 1, tutorId = 1 }) {
                   <input
                     type="text"
                     className="form-input"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
+                    value={typeof topic === 'string' ? topic : ''}
+                    onChange={(e) => {
+                      console.log("Topic input onChange, value:", e.target.value);
+                      setTopic(e.target.value);
+                    }}
                   />
                 </div>
                 {errorMsg && (
