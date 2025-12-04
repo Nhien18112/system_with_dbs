@@ -54,11 +54,21 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         entity.setStudentId(studentId);
         entity.setSubjectId(subjectId);
         entity.setTutorId(tutorId);
+        // Set status to PENDING initially - will be auto-approved by scheduler after 12 hours
         entity.setStatus(TutorRegistrationStatus.PENDING);
         entity.setRequestTime(LocalDateTime.now());
-        // Set a default expiry time (7 days from request) to satisfy NOT NULL constraint
-        entity.setExpiresAt(LocalDateTime.now().plusDays(7));
-        return repository.save(entity);
+        // Set a default expiry time (12 hours from request) for auto-approval
+        entity.setExpiresAt(LocalDateTime.now().plusHours(12));
+        // Save the registration first (PENDING status)
+        TutorRegistrationEntity saved = repository.save(entity);
+        
+        // Immediately approve the registration to trigger the database UPDATE trigger
+        // which will increment tutor's current_slots
+        saved.setStatus(TutorRegistrationStatus.APPROVED);
+        saved.setApprovedAt(LocalDateTime.now());
+        saved = repository.save(saved);
+        
+        return saved;
     }
 
     @Transactional
@@ -123,5 +133,10 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         r.setReasonForRejection(reason);
         repository.save(r);
         return true;
+    }
+
+    @Override
+    public List<TutorRegistrationEntity> getByStudentId(Integer studentId) {
+        return repository.findByStudentId(studentId);
     }
 }

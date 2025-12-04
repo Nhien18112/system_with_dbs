@@ -93,4 +93,16 @@ public class TutorRegistrationController {
         if (ok) return ResponseEntity.ok(Map.of("result", "rejected"));
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Không thể từ chối (không tồn tại hoặc quyền)"));
     }
+
+    @GetMapping("/student-registrations")
+    public ResponseEntity<?> getStudentRegistrations(@RequestParam Integer studentId) {
+        List<TutorRegistrationEntity> regs = facade.getStudentRegistrations(studentId);
+        var dtos = regs.stream().map(r -> new RegistrationDto(
+                r.getId(), r.getStudentId(), r.getTutorId(), r.getSubjectId(), r.getStatus().name(),
+                r.getRequestTime() != null ? r.getRequestTime().toString() : null,
+                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null,
+                r.getReasonForRejection()
+        )).toList();
+        return ResponseEntity.ok(dtos);
+    }
 }

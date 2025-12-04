@@ -55,4 +55,11 @@ public interface ITutorRegistrationService {
     boolean approveById(Long registrationId, Integer tutorId);
 
     boolean rejectById(Long registrationId, Integer tutorId, String reason);
+
+    /**
+     * Get all tutor registrations for a specific student
+     * @param studentId the student id
+     * @return list of registrations for the student
+     */
+    List<TutorRegistrationEntity> getByStudentId(Integer studentId);
 }

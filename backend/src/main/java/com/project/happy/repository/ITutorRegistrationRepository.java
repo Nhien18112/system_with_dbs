@@ -70,4 +70,11 @@ public interface ITutorRegistrationRepository {
      * @param status status
      */
     List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status);
+
+    /**
+     * Find all registrations for a specific student
+     * @param studentId the student id
+     * @return list of registrations for the student
+     */
+    List<TutorRegistrationEntity> findByStudentId(Integer studentId);
 }

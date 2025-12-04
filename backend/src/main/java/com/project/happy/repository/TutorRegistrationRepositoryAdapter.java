@@ -63,4 +63,9 @@ public class TutorRegistrationRepositoryAdapter implements ITutorRegistrationRep
     public List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status) {
         return jpaRepository.findByTutorIdAndStatus(tutorId, status);
     }
+
+    @Override
+    public List<TutorRegistrationEntity> findByStudentId(Integer studentId) {
+        return jpaRepository.findByStudentId(studentId);
+    }
 }

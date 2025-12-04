@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './RegisterTutor.css';
 import Vectorimg from '../../assets/Vector.png';
-import { registerTutor, cancelRegistration, suggestTutors } from '../../service/tutorService';
+import { registerTutor, cancelRegistration, suggestTutors, getStudentApprovedRegistrations } from '../../service/tutorService';
 import { useAuth } from '../../AuthContext';
 
 export default function RegisterTutor() {
@@ -18,11 +18,17 @@ export default function RegisterTutor() {
   const [showConfirmCancelPopup, setShowConfirmCancelPopup] = useState(false);
   const [showCancelSuccessPopup, setShowCancelSuccessPopup] = useState(false);
   const [registrationId, setRegistrationId] = useState(null);
+  const [hasApprovedRegistration, setHasApprovedRegistration] = useState(false);
+  const [approvedTutorName, setApprovedTutorName] = useState('');
   
 
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  // Lấy danh sách môn học từ BE
+  
+  // get current user from AuthContext
+  const { user } = useAuth();
+  
+  // Lấy danh sách môn học từ BE và check duplicate registration
   useEffect(() => {
     const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8081";
     fetch(`${apiBase}/api/subjects`)
@@ -35,7 +41,12 @@ export default function RegisterTutor() {
         console.error('Failed to load subjects:', err);
         setSubjects([]);
       });
-  }, []);
+    
+    // Check if student already has approved registration
+    if (user?.id) {
+      checkApprovedRegistration(user.id);
+    }
+  }, [user?.id]);
 
   const onFindTutors = async () => {
     setShowSubjectDropdown(false);
@@ -72,6 +83,21 @@ export default function RegisterTutor() {
     } catch (err) {
       console.error('Suggest tutors API failed', err);
       alert('Lỗi khi tìm kiếm tutor. Vui lòng kiểm tra kết nối và thử lại.');
+    }
+  };
+
+  const checkApprovedRegistration = async (studentId) => {
+    try {
+      const registrations = await getStudentApprovedRegistrations(studentId);
+      if (registrations && registrations.length > 0) {
+        const approvedReg = registrations.find(r => r.status === 'APPROVED');
+        if (approvedReg) {
+          setHasApprovedRegistration(true);
+          setApprovedTutorName(approvedReg.tutorName || 'Tutor');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check approved registrations', err);
     }
   };
 
@@ -137,9 +163,6 @@ export default function RegisterTutor() {
     }
   }, [step, showCountdown]);
 
-  // get current user from AuthContext
-  const { user } = useAuth();
-
   // Handle countdown timer
   useEffect(() => {
     if (showCountdown && countdown > 0) {
@@ -186,9 +209,21 @@ export default function RegisterTutor() {
       {step===1 && (
         <div className="card shifted">
           <h3>Đăng ký Tutor</h3>
+          {hasApprovedRegistration && (
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffc107', 
+              padding: '12px', 
+              borderRadius: '4px', 
+              marginBottom: '16px',
+              color: '#856404'
+            }}>
+              <strong>Thông báo:</strong> Bạn đã có tutor ({approvedTutorName}), không thể đăng ký thêm tutor mới.
+            </div>
+          )}
           <label>Chọn môn / lĩnh vực</label>
           <div className="subject-row" style={{ position: 'relative' }}>
-            <button className="icon-arrow" title="Chọn môn" onClick={() => setShowSubjectDropdown(!showSubjectDropdown)}>
+            <button className="icon-arrow" title="Chọn môn" onClick={() => setShowSubjectDropdown(!showSubjectDropdown)} disabled={hasApprovedRegistration}>
               {subject || 'Chọn môn'} ▼
             </button>
             {showSubjectDropdown && (
@@ -202,7 +237,9 @@ export default function RegisterTutor() {
             )}
           </div>
           <div className="actions">
-            <button className="btn btn-primary" onClick={onFindTutors}>Tiếp theo</button>
+            <button className="btn btn-primary" onClick={onFindTutors} disabled={hasApprovedRegistration}>
+              {hasApprovedRegistration ? 'Bạn đã có tutor' : 'Tiếp theo'}
+            </button>
           </div>
         </div>
       )}
@@ -305,12 +342,14 @@ export default function RegisterTutor() {
             className="btn-confirm"
             onClick={async () => {
               const studentId = user?.id || '123456';
+              console.log('📝 Registering tutor with:', { studentId, selectedSubjectId, tutorId: selectedTutor?.tutorId });
               try {
                 const result = await registerTutor(studentId, selectedSubjectId, selectedTutor?.tutorId);
-                setRegistrationId(result.registrationId);
+                console.log('✅ Registration result:', result);
+                setRegistrationId(result?.registrationId);
                 setStep(4);
               } catch (err) {
-                console.error('Register tutor failed', err);
+                console.error('❌ Register tutor failed', err);
                 alert('Đăng ký thất bại — vui lòng thử lại.');
               }
             }}

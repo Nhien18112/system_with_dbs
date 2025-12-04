@@ -31,4 +31,9 @@ public interface TutorRegistrationRepository extends JpaRepository<TutorRegistra
      * Find registrations by tutor id and status
      */
     List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status);
+
+    /**
+     * Find all registrations by student id
+     */
+    List<TutorRegistrationEntity> findByStudentId(Integer studentId);
 }
