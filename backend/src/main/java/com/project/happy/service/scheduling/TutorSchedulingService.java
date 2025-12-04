@@ -1,46 +1,51 @@
 package com.project.happy.service.scheduling;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.project.happy.entity.Appointment;
 import com.project.happy.entity.AppointmentStatus;
 import com.project.happy.entity.Meeting;
 import com.project.happy.entity.MeetingStatus;
-import com.project.happy.repository.IMeetingRepository;
+import com.project.happy.repository.IAppointmentRepository; // 💡 Dùng Repo mới
 import com.project.happy.service.freeslot.IFreeSlotService;
 
 @Service
 public class TutorSchedulingService implements ITutorSchedulingService {
+
     @Autowired
-    private final IMeetingRepository meetingRepo;
+    private IAppointmentRepository appointmentRepo; // 💡 Inject Repo mới
+    
     @Autowired
     private IFreeSlotService freeSlotService;
 
-    public TutorSchedulingService(IMeetingRepository meetingRepo, IFreeSlotService slotService) {
-        this.meetingRepo = meetingRepo;
+    public TutorSchedulingService(IAppointmentRepository appointmentRepo, IFreeSlotService slotService) {
+        this.appointmentRepo = appointmentRepo;
         this.freeSlotService = slotService;
     }
 
     @Override
+    @Transactional
     public List<Appointment> viewPendingAppointments(Long tutorId) {
         LocalDateTime now = LocalDateTime.now();
 
-        // Lấy tất cả appointment PENDING từ repo (không tự động reject trong repo)
-        List<Appointment> pending = meetingRepo.findPendingAppointmentsByTutor(tutorId);
+        // 1. Lấy dữ liệu từ DB
+        List<Appointment> pending = appointmentRepo.findPendingAppointmentsByTutor(tutorId);
 
-        // Duyệt danh sách, nếu appointment đã qua thời gian hiện tại thì reject
+        // 2. Logic tự động Reject nếu quá hạn
         pending.forEach(a -> {
             if (a.getStartTime().isBefore(now)) {
-                a.reject("Thời gian đã qua");
-                meetingRepo.update(a); // cập nhật trạng thái trong DB
+                a.reject("Thời gian đã qua (Hệ thống tự động từ chối)");
+                appointmentRepo.save(a); 
             }
         });
 
-        // Trả về chỉ những appointment vẫn còn PENDING
+        // 3. Trả về danh sách
         return pending.stream()
                 .filter(a -> a.getAppointmentStatus() == AppointmentStatus.PENDING)
                 .toList();
@@ -48,71 +53,87 @@ public class TutorSchedulingService implements ITutorSchedulingService {
 
     @Override
     public List<Meeting> findCancellableMeetings(Long tutorId) {
-        List<Meeting> officialMeetings = meetingRepo.findOfficialMeetingsByTutor(tutorId);
+        // Lấy danh sách từ DB
+        List<Appointment> officialMeetings = appointmentRepo.findOfficialAppointmentsByTutor(tutorId);
         LocalDateTime now = LocalDateTime.now();
 
+        // Logic cập nhật trạng thái hiển thị
         return officialMeetings.stream()
-                .peek(m -> m.updateStatus(now)) // cập nhật status real-time
+                .peek(m -> m.updateStatus(now))
                 .filter(m -> !m.isCancelled()
                         && (m.getStatus() == MeetingStatus.SCHEDULED || m.getStatus() == MeetingStatus.ONGOING))
+                .map(m -> (Meeting) m) // Cast về Meeting để trả về
                 .toList();
     }
 
     @Override
+    @Transactional
     public boolean approveAppointment(Long appointmentId, Long tutorId) {
+        Appointment appointment = appointmentRepo.findById(appointmentId).orElse(null);
 
-        Meeting meeting = meetingRepo.findById(appointmentId);
-        if (meeting instanceof Appointment) {
-            Appointment appointment = (Appointment) meeting;
-            if (appointment.getTutorId() != tutorId
+        if (appointment != null) {
+            // Validate quyền sở hữu và trạng thái
+            if (!appointment.getTutorId().equals(tutorId) 
                     || appointment.getAppointmentStatus() != AppointmentStatus.PENDING) {
                 return false;
             }
-            // boolean conflict = meetingRepo.overlapsWith(
-            // appointment.getStartTime(),
-            // appointment.getEndTime()
-            // );
+
+            // Logic Approve
             appointment.approve();
             String onlineLink = createOnlineLink(appointment);
             appointment.setOnlineLink(onlineLink);
-            meetingRepo.update(appointment);
+            
+            appointmentRepo.save(appointment); 
             return true;
         }
         return false;
     }
 
     @Override
+    @Transactional
     public boolean rejectAppointment(Long appointmentId, Long tutorId, String reason) {
-        Meeting meeting = meetingRepo.findById(appointmentId);
-        if (meeting instanceof Appointment) {
-            Appointment appointment = (Appointment) meeting;
-            if (appointment.getTutorId() != tutorId
+        Appointment appointment = appointmentRepo.findById(appointmentId).orElse(null);
+
+        if (appointment != null) {
+            if (!appointment.getTutorId().equals(tutorId) 
                     || appointment.getAppointmentStatus() != AppointmentStatus.PENDING) {
                 return false;
             }
+
             appointment.reject(reason);
-            meetingRepo.update(appointment);
+            appointmentRepo.save(appointment); 
+            
+            // Trả lại slot rảnh
+            tutorReturnCancelledSlot(tutorId, appointmentId);
+            
             return true;
         }
         return false;
     }
 
     @Override
+    @Transactional
     public boolean cancelMeeting(Long tutorId, Long meetingId, String reason) {
-        Meeting meeting = meetingRepo.findById(meetingId);
-        if (meeting == null || meeting.isCancelled() || meeting.getTutorId() != tutorId) {
+        Appointment meeting = appointmentRepo.findById(meetingId).orElse(null);
+
+        if (meeting == null || meeting.isCancelled() || !meeting.getTutorId().equals(tutorId)) {
             return false;
         }
+
         boolean ok = meeting.cancel(reason);
-        if (ok)
-            meetingRepo.update(meeting);
+        if (ok) {
+            appointmentRepo.save(meeting);
+            tutorReturnCancelledSlot(tutorId, meetingId);
+        }
         return ok;
     }
 
     @Override
+    @Transactional
     public boolean tutorReturnCancelledSlot(Long tutorId, Long meetingId) {
-        Meeting meeting = meetingRepo.findById(meetingId);
-        if (meeting == null || meeting.isCancelled() || meeting.getTutorId() != tutorId) {
+        Appointment meeting = appointmentRepo.findById(meetingId).orElse(null);
+        
+        if (meeting == null || !meeting.getTutorId().equals(tutorId)) {
             return false;
         }
 
@@ -132,29 +153,15 @@ public class TutorSchedulingService implements ITutorSchedulingService {
 
     @Override
     public List<Meeting> viewOfficialMeetings(Long tutorId) {
-        List<Meeting> list = meetingRepo.findOfficialMeetingsByStudent(tutorId);
+        List<Appointment> list = appointmentRepo.findOfficialAppointmentsByTutor(tutorId);
+        
         list.forEach(m -> m.updateStatus(LocalDateTime.now()));
-        return list;
-
+        return new ArrayList<>(list);
     }
 
-    /*
-     * @Override
-     * public boolean validateScheduleConflict(int tutorId, LocalDateTime start,
-     * LocalDateTime end) {
-     * List<Appointment> meetings =
-     * meetingRepo.findPendingAppointmentsByTutor(tutorId);
-     * for (Appointment a : meetings) {
-     * if (a.overlapsWith(start, end)) {
-     * return false;
-     * }
-     * }
-     * return true;
-     * }
-     */
     @Override
     public Meeting viewMeetingDetails(Long meetingId) {
-        Meeting meeting = meetingRepo.findById(meetingId);
+        Appointment meeting = appointmentRepo.findById(meetingId).orElse(null);
         if (meeting != null) {
             meeting.updateStatus(LocalDateTime.now());
         }
@@ -163,28 +170,11 @@ public class TutorSchedulingService implements ITutorSchedulingService {
 
     @Override
     public String createOnlineLink(Appointment appointment) {
-        // Ví dụ tạo link online đơn giản
-        return "https://meet.example.com/" + appointment.getMeetingId();
+        return "https://meet.example.com/" + appointment.getAppointmentId();
     }
 
     @Override
     public Appointment viewAppointmentDetails(Long appointmentId) {
-        // Lấy meeting từ repository
-        Meeting meeting = meetingRepo.findById(appointmentId);
-
-        // Nếu không tồn tại -> return null
-        if (meeting == null) {
-            return null;
-        }
-
-        // Kiểm tra nếu meeting là Appointment
-        if (meeting instanceof Appointment) {
-            Appointment appointment = (Appointment) meeting;
-
-            // Trả về appointment để tutor xem chi tiết
-            return appointment;
-        }
-        // Không phải Appointment -> không xem được
-        return null;
+        return appointmentRepo.findById(appointmentId).orElse(null);
     }
 }

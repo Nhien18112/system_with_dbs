@@ -41,7 +41,7 @@ const TutorFreeSlot = () => {
   const timeOptions = generateTimeOptions();
 
   const fetchDailySlots = (date) => {
-    fetch(`http://localhost:8080/freeslots/daily?date=${date}`, {
+    fetch(`http://localhost:8081/freeslots/daily?date=${date}`, {
       headers: { Authorization: AUTH_HEADER },
     })
       .then((res) => res.json())
@@ -78,7 +78,7 @@ const TutorFreeSlot = () => {
   const handleSave = () => {
     const payload = { date: selectedDate, timeRanges: formSlots };
 
-    fetch("http://localhost:8080/freeslots/daily", {
+    fetch("http://localhost:8081/freeslots/daily", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

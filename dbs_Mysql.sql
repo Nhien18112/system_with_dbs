@@ -1,4 +1,9 @@
 -- Tạo database
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP DATABASE IF EXISTS SW_PROJECT;
+
+SET FOREIGN_KEY_CHECKS = 1;
 CREATE DATABASE IF NOT EXISTS SW_PROJECT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE SW_PROJECT;
 
@@ -101,21 +106,43 @@ CREATE TABLE consultations (
 
 -- Bảng lịch hẹn cá nhân (cải tiến với reminder_sent)
 CREATE TABLE appointments (
+    -- ID và Khóa
     appointment_id INT AUTO_INCREMENT PRIMARY KEY,
-    student_id INT NOT NULL,
+    
+    -- Thuộc tính CHUNG từ Meeting
     tutor_id INT NOT NULL,
-    availability_id INT NOT NULL,
-    topic VARCHAR(255) NOT NULL,
+    start_time DATETIME NOT NULL,
+    end_time DATETIME NOT NULL,
+    topic VARCHAR(255),
     description TEXT,
-    appointment_status ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED') DEFAULT 'PENDING',
-    reminder_sent BOOLEAN DEFAULT FALSE, -- New field
+    online_link VARCHAR(500),
+    status ENUM('SCHEDULED', 'ONGOING', 'COMPLETED', 'CANCELLED') 
+        NOT NULL DEFAULT 'SCHEDULED',
+    meeting_type ENUM('APPOINTMENT', 'CONSULTATION') 
+        NOT NULL DEFAULT 'APPOINTMENT',
+    is_cancelled BOOLEAN DEFAULT FALSE,
+    cancellation_reason TEXT,
+    
+    -- Thuộc tính RIÊNG
+    student_id INT NOT NULL,
+    availability_id INT NOT NULL, 
+    appointment_status ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED') 
+        NOT NULL DEFAULT 'PENDING',
+    reject_reason TEXT,
+    
+    -- Các trường quản lý
+    reminder_sent BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP 
+        ON UPDATE CURRENT_TIMESTAMP,
     approved_at TIMESTAMP NULL,
+    
     FOREIGN KEY (student_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (tutor_id) REFERENCES users(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (availability_id) REFERENCES tutor_availability(availability_id) ON DELETE CASCADE
+    FOREIGN KEY (availability_id) REFERENCES tutor_availability(availability_id) 
+        ON DELETE CASCADE
 );
+
 
 -- Bảng đăng ký tham gia buổi tư vấn
 CREATE TABLE consultation_registrations (
@@ -872,7 +899,7 @@ INSERT INTO users (bk_net_id, email, full_name, role, faculty, major, phone_numb
 ('student006', 'student006@hcmut.edu.vn', 'Đỗ Thị K', 'STUDENT', 'Computer Science', 'Software Engineering', '0911111111', 2.7, 4, NULL),
 ('student007', 'student007@hcmut.edu.vn', 'Lý Văn L', 'STUDENT', 'Computer Science', 'Artificial Intelligence', '0912222222', 3.9, 2, NULL),
 ('student008', 'student008@hcmut.edu.vn', 'Mai Thị M', 'STUDENT', 'Electrical Engineering', 'Electronics', '0913333333', 3.0, 3, NULL),
-
+('student009', 'nguyenvana@hcmut.edu.vn', 'Nguyễn Văn A', 'STUDENT', 'Computer Science', 'Information Systems', '0988888888', 3.5, 2, NULL),
 -- Coordinators
 ('coord001', 'coord001@hcmut.edu.vn', 'Lê Văn N', 'COORDINATOR', 'Computer Science', NULL, '0914444444', NULL, NULL, 'Department Coordinator'),
 ('coord002', 'coord002@hcmut.edu.vn', 'Trần Thị O', 'COORDINATOR', 'Electrical Engineering', NULL, '0915555555', NULL, NULL, 'Program Manager');
@@ -938,6 +965,7 @@ INSERT INTO tutor_registrations (student_id, tutor_id, subject_id, registration_
 (8, 4, 9, 'REJECTED', 'Học về cơ học ứng dụng cho kỳ thi sắp tới', 'Tutor không nhận thêm sinh viên trong tháng này', 65.00, '2024-01-13 14:00:00', '2024-01-14 02:00:00'),
 (9, 1, 6, 'PENDING', 'Cần học web development với React và Node.js', NULL, 88.00, '2024-01-14 15:00:00', '2024-01-14 03:00:00');
 
+
 -- Insert consultations với reminder_sent
 INSERT INTO consultations (tutor_id, title, description, consultation_date, start_time, end_time, consultation_mode, max_participants, current_participants, room_id, online_link, reminder_sent, status) VALUES
 (1, 'Workshop Software Engineering Best Practices', 'Chia sẻ về quy trình phát triển phần mềm, agile methodologies, và code review', '2024-01-20', '09:00', '11:00', 'OFFLINE', 20, 5, 1, NULL, false, 'SCHEDULED'),
@@ -947,12 +975,47 @@ INSERT INTO consultations (tutor_id, title, description, consultation_date, star
 (1, 'Web Development Crash Course', 'HTML, CSS, JavaScript cơ bản cho người mới bắt đầu', '2024-01-25', '10:00', '12:00', 'ONLINE', 40, 12, NULL, 'https://meet.google.com/web-dev-2024', true, 'SCHEDULED');
 
 -- Insert appointments với reminder_sent
-INSERT INTO appointments (student_id, tutor_id, availability_id, topic, description, appointment_status, reminder_sent, created_at, approved_at) VALUES
-(5, 1, 3, 'Hướng dẫn đồ án Software Engineering', 'Em cần hỗ trợ phần thiết kế database và architecture cho đồ án môn SE', 'APPROVED', true, '2024-01-14 09:00:00', '2024-01-14 10:00:00'),
-(6, 2, 5, 'Thắc mắc về Machine Learning Algorithms', 'Cần giải thích về thuật toán SVM và ứng dụng thực tế', 'PENDING', false, '2024-01-14 10:30:00', NULL),
-(7, 3, 8, 'Bài tập mạch điện tử nâng cao', 'Gặp khó khăn với bài tập transistor và amplifier design', 'APPROVED', true, '2024-01-14 11:00:00', '2024-01-14 14:00:00'),
-(9, 1, 1, 'Tư vấn học phần và lộ trình học web development', 'Cần tư vấn chọn môn học và lộ trình trở thành full-stack developer', 'PENDING', false, '2024-01-14 15:00:00', NULL),
-(10, 2, 6, 'Hướng dẫn project Computer Vision', 'Cần hỗ trợ implement object detection model cho project', 'APPROVED', false, '2024-01-15 08:00:00', '2024-01-15 09:00:00');
+INSERT INTO appointments (
+    student_id, tutor_id, availability_id,
+    topic, description,
+    start_time, end_time,
+    appointment_status, reminder_sent,
+    created_at, approved_at
+) VALUES
+(5, 1, 3,
+ 'Hướng dẫn đồ án Software Engineering',
+ 'Em cần hỗ trợ phần thiết kế database và architecture cho đồ án môn SE',
+ '2024-01-14 09:00:00', '2024-01-14 10:00:00',
+ 'APPROVED', true,
+ '2024-01-14 09:00:00', '2024-01-14 10:00:00'),
+
+(6, 2, 5,
+ 'Thắc mắc về Machine Learning Algorithms',
+ 'Cần giải thích về thuật toán SVM và ứng dụng thực tế',
+ '2024-01-14 10:30:00', '2024-01-14 11:30:00',
+ 'PENDING', false,
+ '2024-01-14 10:30:00', NULL),
+
+(7, 3, 8,
+ 'Bài tập mạch điện tử nâng cao',
+ 'Gặp khó khăn với bài tập transistor và amplifier design',
+ '2024-01-14 11:00:00', '2024-01-14 12:00:00',
+ 'APPROVED', true,
+ '2024-01-14 11:00:00', '2024-01-14 14:00:00'),
+
+(9, 1, 1,
+ 'Tư vấn học phần và lộ trình học web development',
+ 'Cần tư vấn chọn môn học và lộ trình trở thành full-stack developer',
+ '2024-01-14 15:00:00', '2024-01-14 16:00:00',
+ 'PENDING', false,
+ '2024-01-14 15:00:00', NULL),
+
+(10, 2, 6,
+ 'Hướng dẫn project Computer Vision',
+ 'Cần hỗ trợ implement object detection model cho project',
+ '2024-01-15 08:00:00', '2024-01-15 09:00:00',
+ 'APPROVED', false,
+ '2024-01-15 08:00:00', '2024-01-15 09:00:00');
 
 -- Insert consultation_registrations
 INSERT INTO consultation_registrations (consultation_id, student_id, registration_status, waitlist_position, registered_at) VALUES
@@ -1003,17 +1066,17 @@ INSERT INTO progress_records (tutor_id, student_id, consultation_id, appointment
 -- Insert curriculum_frameworks
 -- Insert lại curriculum_frameworks với coordinator_id đúng (13, 14)
 INSERT INTO curriculum_frameworks (coordinator_id, title, description, topics, duration_hours, learning_objectives, required_materials, status) VALUES
-(13, 'Software Engineering Foundation Program', 'Khung chương trình cơ bản cho Software Engineering từ beginner đến advanced', 'Requirements Engineering, System Design, Implementation, Testing, Deployment, Maintenance', 40, 'Nắm vững quy trình phát triển phần mềm, có thể tham gia team development', 'Laptop, IDE, Version Control System, Textbook', 'ACTIVE'),
-(14, 'Electronics and Circuit Design Curriculum', 'Chương trình toàn diện về điện tử và thiết kế mạch', 'Basic Circuits, Semiconductor Devices, Analog Circuits, Digital Circuits, PCB Design', 36, 'Hiểu và phân tích được mạch điện, thiết kế mạch cơ bản', 'Multimeter, Oscilloscope, Breadboard, Electronic Components', 'ACTIVE'),
-(13, 'AI/ML Comprehensive Learning Program', 'Chương trình học AI/ML từ cơ bản đến nâng cao', 'ML Algorithms, Deep Learning, Computer Vision, NLP, Model Evaluation', 32, 'Hiểu và áp dụng được các thuật toán ML, build AI applications', 'Python, Jupyter Notebook, ML Libraries, Datasets', 'ACTIVE'),
-(14, 'Robotics and Automation Foundation', 'Chương trình nền tảng về robotics và automation', 'Robot Kinematics, Control Systems, Sensors, Actuators, Programming', 28, 'Hiểu nguyên lý robot, lập trình robot cơ bản', 'Robot Kit, Programming Software, Simulation Tools', 'ACTIVE');
+(14, 'Software Engineering Foundation Program', 'Khung chương trình cơ bản cho Software Engineering từ beginner đến advanced', 'Requirements Engineering, System Design, Implementation, Testing, Deployment, Maintenance', 40, 'Nắm vững quy trình phát triển phần mềm, có thể tham gia team development', 'Laptop, IDE, Version Control System, Textbook', 'ACTIVE'),
+(15, 'Electronics and Circuit Design Curriculum', 'Chương trình toàn diện về điện tử và thiết kế mạch', 'Basic Circuits, Semiconductor Devices, Analog Circuits, Digital Circuits, PCB Design', 36, 'Hiểu và phân tích được mạch điện, thiết kế mạch cơ bản', 'Multimeter, Oscilloscope, Breadboard, Electronic Components', 'ACTIVE'),
+(14, 'AI/ML Comprehensive Learning Program', 'Chương trình học AI/ML từ cơ bản đến nâng cao', 'ML Algorithms, Deep Learning, Computer Vision, NLP, Model Evaluation', 32, 'Hiểu và áp dụng được các thuật toán ML, build AI applications', 'Python, Jupyter Notebook, ML Libraries, Datasets', 'ACTIVE'),
+(15, 'Robotics and Automation Foundation', 'Chương trình nền tảng về robotics và automation', 'Robot Kinematics, Control Systems, Sensors, Actuators, Programming', 28, 'Hiểu nguyên lý robot, lập trình robot cơ bản', 'Robot Kit, Programming Software, Simulation Tools', 'ACTIVE');
 
 -- Insert lại reports với coordinator_id đúng (13, 14)
 INSERT INTO reports (coordinator_id, report_type, report_title, report_period, generated_date, file_path, file_format, status, sent_date) VALUES
-(13, 'TUTOR_PERFORMANCE', 'Báo cáo hiệu suất Tutor tháng 1/2024', 'MONTHLY', '2024-01-31 17:00:00', '/reports/tutor_perf_jan2024.pdf', 'PDF', 'SENT', '2024-01-31 18:00:00'),
-(14, 'SYSTEM_USAGE', 'Báo cáo sử dụng hệ thống quý 1/2024', 'QUARTERLY', '2024-03-31 16:00:00', '/reports/system_usage_q1_2024.xlsx', 'EXCEL', 'GENERATED', NULL),
-(13, 'STUDENT_FEEDBACK', 'Tổng hợp phản hồi sinh viên tháng 1/2024', 'MONTHLY', '2024-01-31 15:00:00', '/reports/feedback_jan2024.pdf', 'PDF', 'SENT', '2024-01-31 16:30:00'),
-(14, 'COURSE_COMPLETION', 'Báo cáo hoàn thành khóa học học kỳ 1/2024', 'SEMESTER', '2024-06-30 14:00:00', '/reports/course_completion_sem1_2024.pdf', 'PDF', 'GENERATED', NULL);
+(14, 'TUTOR_PERFORMANCE', 'Báo cáo hiệu suất Tutor tháng 1/2024', 'MONTHLY', '2024-01-31 17:00:00', '/reports/tutor_perf_jan2024.pdf', 'PDF', 'SENT', '2024-01-31 18:00:00'),
+(15, 'SYSTEM_USAGE', 'Báo cáo sử dụng hệ thống quý 1/2024', 'QUARTERLY', '2024-03-31 16:00:00', '/reports/system_usage_q1_2024.xlsx', 'EXCEL', 'GENERATED', NULL),
+(14, 'STUDENT_FEEDBACK', 'Tổng hợp phản hồi sinh viên tháng 1/2024', 'MONTHLY', '2024-01-31 15:00:00', '/reports/feedback_jan2024.pdf', 'PDF', 'SENT', '2024-01-31 16:30:00'),
+(15, 'COURSE_COMPLETION', 'Báo cáo hoàn thành khóa học học kỳ 1/2024', 'SEMESTER', '2024-06-30 14:00:00', '/reports/course_completion_sem1_2024.pdf', 'PDF', 'GENERATED', NULL);
 
 -- Insert notifications với đa dạng types
 INSERT INTO notifications (user_id, title, message, notification_type, is_read, priority, created_at, related_entity_type, related_entity_id, expires_at) VALUES
@@ -1103,3 +1166,53 @@ SELECT * FROM matching_suggestions ORDER BY suggestion_id;
 
 -- Xem tất cả payments
 SELECT * FROM payments ORDER BY payment_id;
+-- 0. Chọn database
+USE sw_project;
+
+
+
+
+------------------------------------------------------------
+-- 3. Fix các appointment bị NULL is_cancelled
+------------------------------------------------------------
+SET SQL_SAFE_UPDATES = 0;
+UPDATE appointments SET is_cancelled = 0 WHERE is_cancelled IS NULL;
+SET SQL_SAFE_UPDATES = 1;
+
+------------------------------------------------------------
+-- 4. Kiểm tra availability (tùy chọn)
+------------------------------------------------------------
+SELECT * 
+FROM tutor_availability 
+WHERE tutor_id = 1 
+  AND available_date = '2025-12-06';
+
+------------------------------------------------------------
+-- 5. Thêm dữ liệu mẫu cho users
+------------------------------------------------------------
+INSERT INTO users (
+    bk_net_id, email, full_name, role, 
+    faculty, major, phone_number, 
+    gpa, year_of_study, qualifications
+) VALUES
+-- Tutor
+('b.tranvan', 'b.Tranvan@hcmut.edu.vn', 'Trần Văn B', 'TUTOR',
+ 'Computer Science', 'Software Engineering', '0901111111',
+ NULL, NULL, 'MSc in Computer Science, 5 years teaching experience'),
+
+
+
+-- Student
+('a.nguyenvan', 'a.Nguyenvan@hcmut.edu.vn', 'Nguyễn Văn A', 'STUDENT',
+ 'Computer Science', 'Software Engineering', '0905555555',
+ 3.2, 3, NULL);
+ 
+INSERT INTO tutor_expertise (tutor_id, subject_id, proficiency_level, years_of_experience, hourly_rate, is_available) VALUES
+(16,1,'EXPERT',4,23.00,true);
+
+SELECT te.tutor_id, u.full_name, s.subject_name 
+FROM tutor_expertise te
+JOIN users u ON u.user_id = te.tutor_id
+JOIN subjects s ON s.subject_id = te.subject_id;
+
+select * from users;

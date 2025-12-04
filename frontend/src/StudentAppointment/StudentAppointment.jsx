@@ -240,7 +240,20 @@ function StudentAppointment({ studentId = 1 }) {
       // Reset form nhẹ
       setTopic("");
     } catch (err) {
-      setErrorMsg(`Lỗi: ${err.response?.data || "Server error"}`);
+      // Handle error - convert object to string if needed
+      let errorMsg = "Server error";
+      if (err.response?.data) {
+        if (typeof err.response.data === 'string') {
+          errorMsg = err.response.data;
+        } else if (err.response.data.error) {
+          errorMsg = err.response.data.error;
+        } else if (err.response.data.message) {
+          errorMsg = err.response.data.message;
+        } else {
+          errorMsg = JSON.stringify(err.response.data);
+        }
+      }
+      setErrorMsg(`Lỗi: ${errorMsg}`);
     }
   };
 
@@ -297,7 +310,7 @@ function StudentAppointment({ studentId = 1 }) {
           return (
             <div key={mt.meetingId} className="meeting-card">
               <div className="meeting-info">
-                <div className="meeting-topic">Chủ đề: {mt.topic}</div>
+                <div className="meeting-topic">Chủ đề: {typeof mt.topic === 'string' ? mt.topic : JSON.stringify(mt.topic)}</div>
                 <div className="meeting-time">
                   Thời gian: {formatDateTimeFull(mt.startTime, mt.endTime)}
                 </div>
