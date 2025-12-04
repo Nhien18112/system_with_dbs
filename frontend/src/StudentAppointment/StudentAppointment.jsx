@@ -353,7 +353,7 @@ function StudentAppointment({ studentId = 1 }) {
 
       {/* --- TUTOR SECTION --- */}
       <div className="tutor-section">
-        <div className="tutor-section-title">Tutor của bạn</div>
+        <div className="tutor-section-title">Tutor của tôi</div>
         
         {tutorLoading ? (
             <p>Đang tải thông tin...</p>

@@ -34,6 +34,7 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         this.userRepository = userRepository;
     }
 
+    @Override
     @Transactional
     public TutorRegistrationEntity createRequest(Integer studentId, Integer subjectId, Integer tutorId) {
         // Validate roles in DB before inserting to avoid DB trigger errors
@@ -62,6 +63,7 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         return repository.save(entity);
     }
 
+    @Override
     @Transactional
     public boolean cancelRequest(Long registrationId, Integer studentId) {
         Optional<TutorRegistrationEntity> opt = repository.findById(registrationId);
@@ -76,16 +78,19 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         return false;
     }
 
+    @Override
     public List<TutorRegistrationEntity> findPendingOlderThan(LocalDateTime cutoff) {
         return repository.findByStatusAndRequestTimeBefore(TutorRegistrationStatus.PENDING, cutoff);
     }
 
+    @Override
     @Transactional
     public void approveRegistration(TutorRegistrationEntity registration) {
         registration.setStatus(TutorRegistrationStatus.APPROVED);
         repository.save(registration);
     }
 
+    @Override
     public List<MatchingEngine.TutorSuggestion> suggestTutors(String subject) {
         return matchingEngine.suggestTutors(subject);
     }
