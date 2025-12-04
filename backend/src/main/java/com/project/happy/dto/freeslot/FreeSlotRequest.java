@@ -12,6 +12,16 @@ public class FreeSlotRequest {
         private LocalTime startTime;
         private LocalTime endTime;
         
+        // 1. Constructor rỗng (Bắt buộc để Spring nhận JSON từ Frontend)
+        public TimeRange() {
+        }
+
+        // 2. Constructor có tham số (THÊM CÁI NÀY ĐỂ HẾT LỖI ĐỎ)
+        public TimeRange(LocalTime startTime, LocalTime endTime) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
         // Getters Setters
         public LocalTime getStartTime() { return startTime; }
         public void setStartTime(LocalTime startTime) { this.startTime = startTime; }
@@ -19,6 +29,7 @@ public class FreeSlotRequest {
         public void setEndTime(LocalTime endTime) { this.endTime = endTime; }
     }
 
+    // Getters & Setters cho lớp cha
     public LocalDate getDate() { return date; }
     public void setDate(LocalDate date) { this.date = date; }
     public List<TimeRange> getTimeRanges() { return timeRanges; }
