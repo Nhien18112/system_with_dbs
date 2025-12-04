@@ -14,6 +14,10 @@ public class FreeSlotResponse {
         private LocalTime startTime;
         private LocalTime endTime;
 
+        // BẮT BUỘC: THÊM CONSTRUCTOR RỖNG NÀY ĐỂ JACKSON XỬ LÝ JSON KHI API TRẢ VỀ.
+        public TimeRange() { 
+        } 
+        
         // Constructor này rất quan trọng để Service gọi new TimeRange(...)
         public TimeRange(LocalTime startTime, LocalTime endTime) {
             this.startTime = startTime;
