@@ -37,27 +37,6 @@ public class StudentSchedulingService implements IStudentSchedulingService {
     public boolean bookAppointment(Long studentId, Long tutorId, LocalDateTime date,
             LocalDateTime startTime, LocalDateTime endTime, String topic) {
         List<TutorAvailability> availableSlots = freeSlotService.getRawAvailableSlots(tutorId, startTime.toLocalDate());
-        System.out.println("Booking request - tutorId: " + tutorId
-                + ", studentId: " + studentId
-                + ", startTime: " + startTime
-                + ", endTime: " + endTime);
-        System.out.println("========================================================");
-        System.out.println("✅ Danh sách Available Slots (RAW DATA) cho Tutor ID " + tutorId + " vào ngày "
-                + startTime.toLocalDate() + ":");
-
-        if (availableSlots.isEmpty()) {
-            System.out.println("   --> KHÔNG CÓ SLOT RẢNH NÀO.");
-        } else {
-            for (TutorAvailability slot : availableSlots) {
-                System.out.println("   - ID: " + slot.getAvailabilityId() +
-                        ", Thời gian: " + slot.getStartTime() +
-                        " đến " + slot.getEndTime());
-            }
-        }
-        System.out.println("--------------------------------------------------------");
-        System.out.println("Yêu cầu đặt: " + startTime.toLocalTime() + " - " + endTime.toLocalTime());
-        System.out.println("========================================================");
-        // ========================================================
         boolean canBook = availableSlots.stream()
                 .anyMatch(s -> !startTime.toLocalTime().isBefore(s.getStartTime())
                         && !endTime.toLocalTime().isAfter(s.getEndTime()));
@@ -66,15 +45,6 @@ public class StudentSchedulingService implements IStudentSchedulingService {
             throw new IllegalArgumentException(
                     "Rất tiếc, khung giờ này đã có người đặt trước. Vui lòng làm mới trang và chọn một khung giờ khác.");
         }
-        
-        // Find the matching availability slot to get its ID
-        TutorAvailability matchingSlot = availableSlots.stream()
-                .filter(s -> !startTime.toLocalTime().isBefore(s.getStartTime())
-                        && !endTime.toLocalTime().isAfter(s.getEndTime()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Could not find matching availability slot"));
-        
-        System.out.println("--aaaaa-----");
         Appointment appointment = new Appointment(
                 tutorId,
                 studentId,
@@ -95,6 +65,12 @@ public class StudentSchedulingService implements IStudentSchedulingService {
                     "Khung giờ này không khả dụng hoặc đã có người đặt: " + e.getMessage());
         }
         System.out.println("--bbbbb-----");
+
+        // 2. Tạo cuộc hẹn
+        // Constructor này phải khớp với Appointment.java (không có ID)
+
+        // Khi save, JPA sẽ tự động sinh ID
+        // 💡 Dùng appointmentRepo
 
         // 2. Tạo cuộc hẹn
         // Constructor này phải khớp với Appointment.java (không có ID)

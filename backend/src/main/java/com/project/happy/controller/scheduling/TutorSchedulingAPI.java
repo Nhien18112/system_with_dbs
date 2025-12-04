@@ -37,7 +37,7 @@ public class TutorSchedulingAPI {
         List<Appointment> list = tutorService.viewPendingAppointments(tutorId);
         return ResponseEntity.ok(list);
     }
-
+    
     @GetMapping("/appointments/{id}")
     public ResponseEntity<Appointment> getAppointmentDetail(@PathVariable Long id) {
         Appointment appointment = tutorService.viewAppointmentDetails(id);
@@ -94,13 +94,15 @@ public class TutorSchedulingAPI {
     }
 
     @PostMapping("/tutor/{tutorId}/meetings/{meetingId}/return-slot")
-    public ResponseEntity<?> returnSlot(@PathVariable Long id, @PathVariable Long meetingId) {
-        boolean ok = tutorService.tutorReturnCancelledSlot(id, meetingId);
+    public ResponseEntity<?> returnSlot(@PathVariable("tutorId") Long tutorId,
+                                        @PathVariable("meetingId") Long meetingId) {
+        boolean ok = tutorService.tutorReturnCancelledSlot(tutorId, meetingId);
         if (!ok) {
             return ResponseEntity.ok("Tutor chọn KHÔNG trả lại slot.");
         }
         return ResponseEntity.ok("Slot đã trả vào lịch rảnh.");
     }
+
 
     @GetMapping("/meeting/{id}")
     public ResponseEntity<Meeting> detail(@PathVariable Long id) {
@@ -110,5 +112,12 @@ public class TutorSchedulingAPI {
         } else {
             return ResponseEntity.notFound().build();
         }
+    }
+
+    @GetMapping("/meetings/cancelable")
+    public ResponseEntity<List<Meeting>> getCancelableMeetings(@RequestParam Long tutorId) {
+        // Với Tutor, danh sách có thể hủy thường là danh sách chính thức
+        List<Meeting> list = tutorService.viewOfficialMeetings(tutorId);
+        return ResponseEntity.ok(list);
     }
 }
