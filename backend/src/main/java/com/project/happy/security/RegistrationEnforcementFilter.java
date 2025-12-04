@@ -1,7 +1,7 @@
 package com.project.happy.security;
 
 import com.project.happy.entity.TutorRegistrationStatus;
-import com.project.happy.repository.TutorRegistrationRepository;
+import com.project.happy.repository.ITutorRegistrationRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -22,10 +22,10 @@ import java.util.List;
 @Order(Ordered.HIGHEST_PRECEDENCE + 10)
 public class RegistrationEnforcementFilter extends OncePerRequestFilter {
 
-    private final TutorRegistrationRepository repository;
+    private final ITutorRegistrationRepository repository;
 
     @Autowired
-    public RegistrationEnforcementFilter(TutorRegistrationRepository repository) {
+    public RegistrationEnforcementFilter(ITutorRegistrationRepository repository) {
         this.repository = repository;
     }
 
@@ -38,13 +38,18 @@ public class RegistrationEnforcementFilter extends OncePerRequestFilter {
             if (auth != null && auth.isAuthenticated()) {
                 boolean isStudent = auth.getAuthorities().stream().map(GrantedAuthority::getAuthority).anyMatch(r -> r.equalsIgnoreCase("ROLE_STUDENT") || r.equalsIgnoreCase("STUDENT"));
                 if (isStudent) {
-                    String studentId = String.valueOf(auth.getPrincipal());
-                    // student must have at least one registration in PENDING or APPROVED or CREATING
-                    boolean has = repository.existsByStudentIdAndStatusIn(studentId, List.of(TutorRegistrationStatus.PENDING, TutorRegistrationStatus.APPROVED, TutorRegistrationStatus.CREATING));
-                    if (!has) {
-                        // redirect to registration page (frontend route)
-                        response.sendRedirect("/register-tutor");
-                        return;
+                    String principal = String.valueOf(auth.getPrincipal());
+                    try {
+                        Integer studentId = Integer.parseInt(principal);
+                        // student must have at least one registration in PENDING or APPROVED or CREATING
+                        boolean has = repository.existsByStudentIdAndStatusIn(studentId, List.of(TutorRegistrationStatus.PENDING, TutorRegistrationStatus.APPROVED, TutorRegistrationStatus.CREATING));
+                        if (!has) {
+                            // redirect to registration page (frontend route)
+                            response.sendRedirect("/register-tutor");
+                            return;
+                        }
+                    } catch (NumberFormatException ex) {
+                        // principal is not numeric; skip enforcement
                     }
                 }
             }

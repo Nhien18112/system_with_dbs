@@ -27,3 +27,51 @@ export const rejectAppointment = async (appointmentId, tutorId, reason) => {
   );
   return res.data;
 };
+
+// --- Tutor registration APIs ---
+export const registerTutor = async (studentId, subjectId, tutorId) => {
+  // ensure numeric ids and match backend field names
+  const body = { studentId: Number(studentId), subjectId: Number(subjectId), tutorId: Number(tutorId) };
+  const res = await apiClient.post("/api/tutor-registration/register-tutor", body, {
+    headers: { "X-User-Id": String(studentId) },
+  });
+  return res.data; // { registrationId, status }
+};
+
+export const cancelRegistration = async (registrationId, studentId) => {
+  const body = { registrationId, studentId };
+  const res = await apiClient.post("/api/tutor-registration/cancel-registration", body, {
+    headers: { "X-User-Id": studentId },
+  });
+  return res.data;
+};
+
+export const suggestTutors = async (subject) => {
+  const res = await apiClient.get("/api/tutor-registration/suggest", { params: { subject } });
+  return res.data;
+};
+
+// --- Get registrations for tutor ---
+export const getPendingRegistrations = async (tutorId) => {
+  const res = await apiClient.get("/api/tutor-registration/pending-registrations", {
+    params: { tutorId }
+  });
+  return res.data; // List<RegistrationDto>
+};
+
+export const getApprovedStudents = async (tutorId) => {
+  const res = await apiClient.get("/api/tutor-registration/approved-students", {
+    params: { tutorId }
+  });
+  return res.data; // List<RegistrationDto>
+};
+
+export const approveRegistration = async (registrationId, tutorId) => {
+  const res = await apiClient.post(`/api/tutor-registration/${registrationId}/approve`, { tutorId });
+  return res.data;
+};
+
+export const rejectRegistration = async (registrationId, tutorId, reason) => {
+  const res = await apiClient.post(`/api/tutor-registration/${registrationId}/reject`, { tutorId, reason });
+  return res.data;
+};

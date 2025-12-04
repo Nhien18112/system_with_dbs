@@ -27,12 +27,28 @@ public class TutorRegistrationFacade {
         return registrationService.suggestTutors(subject);
     }
 
-    public TutorRegistrationEntity createRegistration(String studentId, String subject, String tutorId) {
+    public TutorRegistrationEntity createRegistration(Integer studentId, Integer subjectId, Integer tutorId) {
         // Could add extra validation (is registration open, student eligibility, etc.)
-        return registrationService.createRequest(studentId, subject, tutorId);
+        return registrationService.createRequest(studentId, subjectId, tutorId);
     }
 
-    public boolean cancel(Long registrationId, String studentId) {
+    public boolean cancel(Long registrationId, Integer studentId) {
         return registrationService.cancelRequest(registrationId, studentId);
+    }
+
+    public java.util.List<TutorRegistrationEntity> getPendingRegistrations(Integer tutorId) {
+        return registrationService.getPendingRegistrations(tutorId);
+    }
+
+    public java.util.List<TutorRegistrationEntity> getApprovedStudents(Integer tutorId) {
+        return registrationService.getApprovedStudents(tutorId);
+    }
+
+    public boolean approve(Long registrationId, Integer tutorId) {
+        return registrationService.approveById(registrationId, tutorId);
+    }
+
+    public boolean reject(Long registrationId, Integer tutorId, String reason) {
+        return registrationService.rejectById(registrationId, tutorId, reason);
     }
 }

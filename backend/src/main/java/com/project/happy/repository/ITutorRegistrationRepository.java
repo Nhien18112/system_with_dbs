@@ -40,7 +40,7 @@ public interface ITutorRegistrationRepository {
      * @param status the registration status
      * @return list of registrations
      */
-    List<TutorRegistrationEntity> findByStudentIdAndStatus(String studentId, TutorRegistrationStatus status);
+    List<TutorRegistrationEntity> findByStudentIdAndStatus(Integer studentId, TutorRegistrationStatus status);
 
     /**
      * Find registrations with status and request time before cutoff
@@ -56,11 +56,18 @@ public interface ITutorRegistrationRepository {
      * @param statuses the collection of statuses
      * @return true if exists, false otherwise
      */
-    boolean existsByStudentIdAndStatusIn(String studentId, Collection<TutorRegistrationStatus> statuses);
+    boolean existsByStudentIdAndStatusIn(Integer studentId, Collection<TutorRegistrationStatus> statuses);
 
     /**
      * Delete a registration by id
      * @param id the registration id
      */
     void deleteById(Long id);
+
+    /**
+     * Find registrations by tutor id and status
+     * @param tutorId tutor id
+     * @param status status
+     */
+    List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status);
 }

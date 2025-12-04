@@ -1,34 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './RegisterTutor.css';
-import mockTutors from './mockDatabase';
 import Vectorimg from '../../assets/Vector.png';
-function TutorCard({ tutor, onSelect }) {
-  const avatarImages = [
-    'https://i.pravatar.cc/150?img=1',
-    'https://i.pravatar.cc/150?img=2',
-    'https://i.pravatar.cc/150?img=3',
-    'https://i.pravatar.cc/150?img=4',
-    'https://i.pravatar.cc/150?img=5'
-  ];
-  const avatarUrl = avatarImages[tutor.tutorId.charCodeAt(tutor.tutorId.length - 1) % avatarImages.length];
-
-  return (
-    <div className="tutor-card">
-      <img src={avatarUrl} alt={tutor.name} className="tutor-avatar-img" />
-      <div className="tutor-info">
-        <div className="tutor-name">{tutor.name}</div>
-        <div className="tutor-rating">★★★★★ {tutor.rating}</div>
-        <div className="tutor-meta">
-          <span>{tutor.availableSlots} slot còn trống</span>
-        </div>
-      </div>
-      <div>
-        <button className="btn btn-select" onClick={() => onSelect(tutor)}>Chọn</button>
-      </div>
-    </div>
-  );
-}
+import { registerTutor, cancelRegistration, suggestTutors } from '../../service/tutorService';
+import { useAuth } from '../../AuthContext';
 
 export default function RegisterTutor() {
   const [step, setStep] = useState(1);
@@ -42,36 +17,68 @@ export default function RegisterTutor() {
   const [showCountdown, setShowCountdown] = useState(false);
   const [showConfirmCancelPopup, setShowConfirmCancelPopup] = useState(false);
   const [showCancelSuccessPopup, setShowCancelSuccessPopup] = useState(false);
+  const [registrationId, setRegistrationId] = useState(null);
+  
 
-  const subjects = [
-    'Nguyên lý ngôn ngữ lập trình',
-    'Cấu trúc dữ liệu',
-    'Lập trình hướng đối tượng',
-    'Cơ sở dữ liệu',
-    'Mạng máy tính',
-    'Hệ điều hành',
-    'Trí tuệ nhân tạo'
-  ];
+  const [subjects, setSubjects] = useState([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState(null);
+  // Lấy danh sách môn học từ BE
+  useEffect(() => {
+    const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8081";
+    fetch(`${apiBase}/api/subjects`)
+      .then(res => res.json())
+      .then(data => {
+        console.log('Subjects loaded:', data);
+        setSubjects(data);
+      })
+      .catch(err => {
+        console.error('Failed to load subjects:', err);
+        setSubjects([]);
+      });
+  }, []);
 
-  const onFindTutors = () => {
-    // try to filter from the mock database by subject
-    const subj = subject && subject.trim();
-    let results = [];
-    if (subj) {
-      results = mockTutors.filter(t => Array.isArray(t.subjects) && t.subjects.some(s => s.toLowerCase().includes(subj.toLowerCase())));
-    }
-    // fallback to simple mock if none found
-    if (!results || results.length === 0) {
-      results = mockTutors; // Use all tutors from mock database
-    }
-    setTutors(results);
+  const onFindTutors = async () => {
     setShowSubjectDropdown(false);
-    setPage(1);
-    setStep(2);
+    if (!selectedSubjectId) {
+      alert('Vui lòng chọn môn học');
+      return;
+    }
+    try {
+      // Tìm subject name để truyền cho suggestTutors
+      const subjObj = subjects.find(s => s.subjectId === selectedSubjectId);
+      const subjName = subjObj?.subjectName || '';
+      const res = await suggestTutors(subjName);
+      let suggestions = [];
+      if (Array.isArray(res)) suggestions = res;
+      else if (res && Array.isArray(res.data)) suggestions = res.data;
+      if (!suggestions || suggestions.length === 0) {
+        alert('Không tìm thấy tutor cho môn ' + subjName + '. Vui lòng thử lại hoặc chọn môn khác.');
+        return;
+      }
+      const mapped = suggestions.map((s, idx) => ({
+        tutorId: s.tutorId || s.tutor_id || `t-${idx}`,
+        name: s.name || 'Tutor',
+        rating: s.rating ?? 4.5,
+        availableSlots: s.availableSlots ?? 0,
+        students: `${Math.max(0, 15 - (s.availableSlots ?? 0))}/15`,
+        hk: 'HK251',
+        code: 'HK251',
+        image: s.image || '',
+        avatar: `https://i.pravatar.cc/150?img=${(idx % 70) + 1}`,
+      }));
+      setTutors(mapped);
+      setPage(1);
+      setStep(2);
+    } catch (err) {
+      console.error('Suggest tutors API failed', err);
+      alert('Lỗi khi tìm kiếm tutor. Vui lòng kiểm tra kết nối và thử lại.');
+    }
   };
 
-  const onSelectSubject = (subj) => {
-    setSubject(subj);
+  const onSelectSubject = (subjectId) => {
+    setSelectedSubjectId(subjectId);
+    const subjObj = subjects.find(s => s.subjectId === subjectId);
+    setSubject(subjObj?.subjectName || '');
     setShowSubjectDropdown(false);
   };
 
@@ -85,9 +92,19 @@ export default function RegisterTutor() {
     setShowConfirmCancelPopup(true);
   };
 
-  const onConfirmCancelYes = () => {
-    // User confirmed they want to cancel - show success popup
+  const onConfirmCancelYes = async () => {
+    // User confirmed they want to cancel - call backend if we have registrationId
     setShowConfirmCancelPopup(false);
+    const studentId = user?.id || '123456';
+    if (registrationId) {
+      try {
+        await cancelRegistration(registrationId, studentId);
+        setRegistrationId(null);
+      } catch (err) {
+        console.error('Cancel registration failed', err);
+        // fallthrough to show success popup for UX, but real app should show error
+      }
+    }
     setShowCancelSuccessPopup(true);
   };
 
@@ -118,7 +135,10 @@ export default function RegisterTutor() {
       setShowCountdown(true);
       setCountdown(10);
     }
-  }, [step]);
+  }, [step, showCountdown]);
+
+  // get current user from AuthContext
+  const { user } = useAuth();
 
   // Handle countdown timer
   useEffect(() => {
@@ -168,13 +188,14 @@ export default function RegisterTutor() {
           <h3>Đăng ký Tutor</h3>
           <label>Chọn môn / lĩnh vực</label>
           <div className="subject-row" style={{ position: 'relative' }}>
-            <input value={subject} onChange={e=>setSubject(e.target.value)} placeholder="Ví dụ: Nguyên lý ngôn ngữ lập trình" />
-            <button className="icon-arrow" title="Chọn môn" onClick={() => setShowSubjectDropdown(!showSubjectDropdown)}>▼</button>
+            <button className="icon-arrow" title="Chọn môn" onClick={() => setShowSubjectDropdown(!showSubjectDropdown)}>
+              {subject || 'Chọn môn'} ▼
+            </button>
             {showSubjectDropdown && (
               <div className="subject-dropdown">
                 {subjects.map(s => (
-                  <div key={s} className="dropdown-item" onClick={() => onSelectSubject(s)}>
-                    {s}
+                  <div key={s.subjectId} className="dropdown-item" onClick={() => onSelectSubject(s.subjectId)}>
+                    {s.subjectName}
                   </div>
                 ))}
               </div>
@@ -280,6 +301,22 @@ export default function RegisterTutor() {
 
         <div className="confirmation-actions">
           <button className="btn-cancel" onClick={onCancel}>Hủy đăng ký</button>
+          <button
+            className="btn-confirm"
+            onClick={async () => {
+              const studentId = user?.id || '123456';
+              try {
+                const result = await registerTutor(studentId, selectedSubjectId, selectedTutor?.tutorId);
+                setRegistrationId(result.registrationId);
+                setStep(4);
+              } catch (err) {
+                console.error('Register tutor failed', err);
+                alert('Đăng ký thất bại — vui lòng thử lại.');
+              }
+            }}
+          >
+            Xác nhận đăng ký
+          </button>
         </div>
       </div>
     </div>

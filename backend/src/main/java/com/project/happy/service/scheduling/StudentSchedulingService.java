@@ -15,20 +15,20 @@ import com.project.happy.entity.Meeting;
 import com.project.happy.entity.MeetingStatus;
 import com.project.happy.entity.TutorSlot;
 
-import com.project.happy.repository.MeetingRepository;
+import com.project.happy.repository.IMeetingRepository;
 import com.project.happy.service.freeslot.IFreeSlotService;
 
 @Service
 public class StudentSchedulingService implements IStudentSchedulingService {
 
     @Autowired
-    private MeetingRepository meetingRepo;
+    private IMeetingRepository meetingRepo;
 
     // Thay vì gọi Repo, ta gọi Service để đảm bảo logic Cắt/Gộp
     @Autowired
     private IFreeSlotService freeSlotService;
 
-    public StudentSchedulingService(MeetingRepository meetingRepo, IFreeSlotService freeSlotService) {
+    public StudentSchedulingService(IMeetingRepository meetingRepo, IFreeSlotService freeSlotService) {
         this.meetingRepo = meetingRepo;
         this.freeSlotService = freeSlotService;
     }
