@@ -8,13 +8,13 @@ import org.springframework.stereotype.Service;
 
 import com.project.happy.dto.feedback.FeedbackDTO;
 import com.project.happy.entity.Feedback;
-import com.project.happy.repository.FeedbackRepository;
+import com.project.happy.repository.IFeedbackRepository;
 
 @Service
 public class FeedbackService implements IFeedbackService {
-    private final FeedbackRepository repository;
+    private final IFeedbackRepository repository;
 
-    public FeedbackService(FeedbackRepository repository) {
+    public FeedbackService(IFeedbackRepository repository) {
         this.repository = repository;
     }
 

@@ -17,30 +17,40 @@ public class TutorRegistrationEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "registration_id")
     private Long id;
 
-    @Column(nullable = false)
-    private String studentId;
+    @Column(name = "student_id", nullable = false)
+    private Integer studentId;
 
-    @Column
-    private String tutorId;
+    @Column(name = "tutor_id")
+    private Integer tutorId;
 
-    @Column(nullable = false)
-    private String subject;
+    @Column(name = "subject_id", nullable = false)
+    private Integer subjectId;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "registration_status", nullable = false)
     private TutorRegistrationStatus status;
 
-    @Column(nullable = false)
+    @Column(name = "created_at", nullable = false)
     private LocalDateTime requestTime;
+    
+    @Column(name = "approved_at")
+    private LocalDateTime approvedAt;
+
+    @Column(name = "expires_at")
+    private LocalDateTime expiresAt;
+
+    @Column(name = "reason_for_rejection")
+    private String reasonForRejection;
 
     public TutorRegistrationEntity() {}
 
-    public TutorRegistrationEntity(String studentId, String tutorId, String subject, TutorRegistrationStatus status, LocalDateTime requestTime) {
+    public TutorRegistrationEntity(Integer studentId, Integer tutorId, Integer subjectId, TutorRegistrationStatus status, LocalDateTime requestTime) {
         this.studentId = studentId;
         this.tutorId = tutorId;
-        this.subject = subject;
+        this.subjectId = subjectId;
         this.status = status;
         this.requestTime = requestTime;
     }
@@ -53,28 +63,28 @@ public class TutorRegistrationEntity {
         this.id = id;
     }
 
-    public String getStudentId() {
+    public Integer getStudentId() {
         return studentId;
     }
 
-    public void setStudentId(String studentId) {
+    public void setStudentId(Integer studentId) {
         this.studentId = studentId;
     }
 
-    public String getTutorId() {
+    public Integer getTutorId() {
         return tutorId;
     }
 
-    public void setTutorId(String tutorId) {
+    public void setTutorId(Integer tutorId) {
         this.tutorId = tutorId;
     }
 
-    public String getSubject() {
-        return subject;
+    public Integer getSubjectId() {
+        return subjectId;
     }
 
-    public void setSubject(String subject) {
-        this.subject = subject;
+    public void setSubjectId(Integer subjectId) {
+        this.subjectId = subjectId;
     }
 
     public TutorRegistrationStatus getStatus() {
@@ -91,5 +101,29 @@ public class TutorRegistrationEntity {
 
     public void setRequestTime(LocalDateTime requestTime) {
         this.requestTime = requestTime;
+    }
+
+    public LocalDateTime getApprovedAt() {
+        return approvedAt;
+    }
+
+    public void setApprovedAt(LocalDateTime approvedAt) {
+        this.approvedAt = approvedAt;
+    }
+
+    public LocalDateTime getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(LocalDateTime expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public String getReasonForRejection() {
+        return reasonForRejection;
+    }
+
+    public void setReasonForRejection(String reasonForRejection) {
+        this.reasonForRejection = reasonForRejection;
     }
 }

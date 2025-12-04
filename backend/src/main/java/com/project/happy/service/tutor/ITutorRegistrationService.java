@@ -1,9 +1,9 @@
 package com.project.happy.service.tutor;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.project.happy.entity.TutorRegistrationEntity;
 
 /**
  * Interface for TutorRegistration service operations
@@ -18,7 +18,7 @@ public interface ITutorRegistrationService {
      * @param tutorId the tutor id
      * @return the created registration entity
      */
-    TutorRegistrationEntity createRequest(String studentId, String subject, String tutorId);
+    TutorRegistrationEntity createRequest(Integer studentId, Integer subjectId, Integer tutorId);
 
     /**
      * Cancel an existing registration request
@@ -26,7 +26,7 @@ public interface ITutorRegistrationService {
      * @param studentId the student id (for authorization)
      * @return true if cancelled successfully, false otherwise
      */
-    boolean cancelRequest(Long registrationId, String studentId);
+    boolean cancelRequest(Long registrationId, Integer studentId);
 
     /**
      * Find pending registrations older than a specified cutoff time
@@ -47,4 +47,14 @@ public interface ITutorRegistrationService {
      * @return list of tutor suggestions
      */
     List<MatchingEngine.TutorSuggestion> suggestTutors(String subject);
+
+    List<TutorRegistrationEntity> getPendingRegistrations(Integer tutorId);
+
+    List<TutorRegistrationEntity> getApprovedStudents(Integer tutorId);
+
+    boolean approveById(Long registrationId, Integer tutorId);
+
+    boolean rejectById(Long registrationId, Integer tutorId, String reason);
+
+    TutorRegistrationEntity getApprovedTutor(Integer studentId);
 }

@@ -138,4 +138,5 @@ public class FreeSlotService implements IFreeSlotService {
         }
         return res;
     }
+    
 }

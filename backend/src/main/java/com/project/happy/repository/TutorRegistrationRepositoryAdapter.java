@@ -40,7 +40,7 @@ public class TutorRegistrationRepositoryAdapter implements ITutorRegistrationRep
     }
 
     @Override
-    public List<TutorRegistrationEntity> findByStudentIdAndStatus(String studentId, TutorRegistrationStatus status) {
+    public List<TutorRegistrationEntity> findByStudentIdAndStatus(Integer studentId, TutorRegistrationStatus status) {
         return jpaRepository.findByStudentIdAndStatus(studentId, status);
     }
 
@@ -50,12 +50,17 @@ public class TutorRegistrationRepositoryAdapter implements ITutorRegistrationRep
     }
 
     @Override
-    public boolean existsByStudentIdAndStatusIn(String studentId, Collection<TutorRegistrationStatus> statuses) {
+    public boolean existsByStudentIdAndStatusIn(Integer studentId, Collection<TutorRegistrationStatus> statuses) {
         return jpaRepository.existsByStudentIdAndStatusIn(studentId, statuses);
     }
 
     @Override
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
+    }
+
+    @Override
+    public List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status) {
+        return jpaRepository.findByTutorIdAndStatus(tutorId, status);
     }
 }

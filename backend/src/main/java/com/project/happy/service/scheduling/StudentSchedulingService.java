@@ -16,7 +16,7 @@ import com.project.happy.entity.Meeting;
 import com.project.happy.entity.MeetingStatus;
 import com.project.happy.entity.TutorAvailability;
 import com.project.happy.repository.IAppointmentRepository;
-import com.project.happy.service.freeslot.IFreeSlotService; // 💡 Sử dụng Repository mới
+import com.project.happy.service.freeslot.IFreeSlotService;
 
 @Service
 public class StudentSchedulingService implements IStudentSchedulingService {
@@ -51,6 +51,9 @@ public class StudentSchedulingService implements IStudentSchedulingService {
                 startTime,
                 endTime,
                 topic);
+        
+        // Set the availability ID
+        appointment.setAvailabilityId(Math.toIntExact(matchingSlot.getAvailabilityId()));
 
         appointmentRepo.save(appointment);
         // 1. Cắt slot & Kiểm tra (Logic giữ nguyên)
@@ -61,6 +64,13 @@ public class StudentSchedulingService implements IStudentSchedulingService {
             throw new IllegalArgumentException(
                     "Khung giờ này không khả dụng hoặc đã có người đặt: " + e.getMessage());
         }
+        System.out.println("--bbbbb-----");
+
+        // 2. Tạo cuộc hẹn
+        // Constructor này phải khớp với Appointment.java (không có ID)
+
+        // Khi save, JPA sẽ tự động sinh ID
+        // 💡 Dùng appointmentRepo
 
         // 2. Tạo cuộc hẹn
         // Constructor này phải khớp với Appointment.java (không có ID)

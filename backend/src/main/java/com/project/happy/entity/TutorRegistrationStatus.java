@@ -4,6 +4,7 @@ public enum TutorRegistrationStatus {
     CREATING,
     PENDING, // waiting approval (12h)
     APPROVED,
+    REJECTED,
     CANCELLED,
     FAILED
 }

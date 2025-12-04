@@ -1,7 +1,9 @@
 package com.project.happy.controller.scheduling;
 
 import java.util.List;
+import java.util.Map;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +21,7 @@ import com.project.happy.entity.Appointment;
 import com.project.happy.entity.Meeting;
 import com.project.happy.service.scheduling.IStudentSchedulingService;
 
-
-@CrossOrigin(origins = "http://localhost:3000")  // CHÈN DÒNG NÀY
+@CrossOrigin(origins = "http://localhost:3000") // CHÈN DÒNG NÀY
 @RestController
 @RequestMapping("/api/student/scheduling")
 public class StudentSchedulingAPI {
@@ -33,19 +34,25 @@ public class StudentSchedulingAPI {
 
     // =================== Book Appointment ===================
     @PostMapping("/appointments")
-    public ResponseEntity<String> book(@RequestBody AppointmentRequest req) {
-        boolean success = studentService.bookAppointment(
-                req.getStudentId(),
-                req.getTutorId(),
-                req.getDate(),
-                req.getStartTime(),
-                req.getEndTime(),
-                req.getTopic());
+    public ResponseEntity<?> book(@RequestBody AppointmentRequest req) {
+        try {
+            boolean success = studentService.bookAppointment(
+                    req.getStudentId(),
+                    req.getTutorId(),
+                    req.getDate(),
+                    req.getStartTime(),
+                    req.getEndTime(),
+                    req.getTopic());
 
-        if (success) {
-            return ResponseEntity.ok("Appointment booked successfully");
-        } else {
-            return ResponseEntity.badRequest().body("Failed to book appointment");
+            if (success) {
+                return ResponseEntity.ok(Map.of("message", "Appointment booked successfully"));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of("message", "Failed to book appointment"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace(); // In ra console backend
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
         }
     }
 
@@ -54,13 +61,13 @@ public class StudentSchedulingAPI {
         List<Appointment> list = studentService.viewAppointmentHistory(studentId);
         return ResponseEntity.ok(list);
     }
-   // =================== Cancelable Meetings ===================
+
+    // =================== Cancelable Meetings ===================
     @GetMapping("/meetings/cancelable")
     public ResponseEntity<List<Meeting>> getCancelableMeetings(@RequestParam Long studentId) {
         List<Meeting> list = studentService.findCancellableMeetings(studentId);
         return ResponseEntity.ok(list);
     }
-
 
     // =================== Cancel Meeting ===================
     @PostMapping("/meetings/{id}/cancel")

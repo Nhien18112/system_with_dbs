@@ -1,254 +1,184 @@
-﻿﻿/* src/Layout.css */
-
-body {
+﻿﻿/* ================= RESET ================= */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;   /* ⚡ padding/border không làm tràn */
   margin: 0;
-  font-family: "Segoe UI", sans-serif;
-  background-color: #eef8ff;
+  padding: 0;
 }
 
+body {
+  font-family: "Segoe UI", sans-serif;
+  background-color: #eef8ff;
+  min-height: 100vh;
+  overflow-x: hidden;       /* ngăn scroll ngang toàn trang */
+}
+
+/* ================= WRAPPER ================= */
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
+  min-height: 100vh;        /* footer luôn đáy */
 }
 
-/* --- HEADER (Thanh ngang màu xanh) --- */
+/* ================= HEADER ================= */
 .main-header {
-  background-color: #003366; /* Xanh đậm */
+  background-color: #003366;
   color: white;
-  height: 64px; /* Chiều cao cố định */
+  height: 64px;
   display: flex;
-  align-items: center; /* Căn giữa theo chiều dọc */
-  justify-content: space-between; /* Logo bên trái, User bên phải */
-  padding: 0 25px; /* Khoảng cách lề 2 bên */
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-  z-index: 1000; /* Đảm bảo nằm trên cùng */
-  position: relative;
+  align-items: center;      /* ⚡ căn giữa theo chiều dọc */
+  justify-content: space-between;
+  padding: 0 25px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  line-height: 1;           /* tránh text tràn */
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 15px; /* Khoảng cách giữa Logo và Tên */
+  gap: 15px;
+  cursor: pointer;
 }
-
-.header-logo {
-  height: 60px;
-  width: auto;
-  object-fit: contain;
-}
-
+.header-logo { height: 60px; }
 .header-title {
   font-size: 20px;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  color: white;
-  margin: 0;
+  line-height: 1;           /* giữ text thẳng hàng */
+  white-space: nowrap;      /* text dài không xuống dòng */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
+/* ================= HEADER-RIGHT ================= */
 .header-right {
   display: flex;
-  align-items: center;
-  gap: 25px; /* Khoảng cách giữa Chuông và User */
+  align-items: center;      /* ⚡ avatar, bell, text cùng hàng */
+  gap: 25px;
+  position: relative;
 }
 
-.icon-bell {
-  cursor: pointer;
-  transition: 0.2s;
+/* Chuông thông báo */
+.bell-wrapper {
+  position: relative;
 }
-.icon-bell:hover {
-  opacity: 0.8;
+.icon-bell { cursor: pointer; }
+.noti-popup {
+  position: absolute;
+  top: 36px;
+  right: 0;
+  width: 250px;
+  background: white;
+  color: #000;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  padding: 10px;
+  z-index: 30;
 }
+.noti-title { font-weight: 600; margin-bottom: 5px; }
+.noti-popup ul { list-style: none; padding-left: 0; }
 
+/* User Info */
 .user-info {
   display: flex;
-  align-items: center;
+  align-items: center;       /* ⚡ avatar & tên thẳng hàng */
   gap: 10px;
-  font-weight: 500;
-  font-size: 15px;
+  cursor: pointer;
 }
 
-.user-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  object-fit: cover;
+.user-info span {
+  line-height: 1;
+  white-space: nowrap;
+  font-weight: 600;
+  color: white;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* --- BODY (Sidebar + Content) --- */
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; }
+
+/* User menu */
+.user-menu {
+  position: absolute;
+  top: 50px;
+  right: 0;
+  background: white;
+  color: #000;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  overflow: hidden;
+  z-index: 30;
+}
+.user-menu-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.user-menu-item:hover { background: #f0f0f0; }
+.user-menu-item.logout { color: red; }
+
+/* ================= BODY ================= */
 .app-body {
   display: flex;
-  flex: 1; /* Chiếm hết chiều cao còn lại */
+  flex: 1;                   /* đẩy footer xuống cuối */
   width: 100%;
+  min-height: calc(100vh - 64px);
+  overflow: hidden;           /* tránh tràn nội dung */
 }
 
-/* Sidebar */
+/* ================= SIDEBAR ================= */
 .main-sidebar {
   width: 260px;
   background: white;
   border-right: 1px solid #ddd;
+  padding-top: 20px;
   display: flex;
   flex-direction: column;
-  padding-top: 20px;
 }
 
-/* nav-item */
+/* NAV ITEM */
 .nav-item {
   padding: 12px 25px;
-  color: #1e2a5e;
   font-weight: 600;
-  font-size: 15px;
-  cursor: pointer;
+  color: #1e2a5e;
   display: flex;
   align-items: center;
   gap: 12px;
+  cursor: pointer;
   border-left: 4px solid transparent;
-  transition: 0.2s;
 }
-.nav-item:hover {
-  background-color: #f0f7ff;
-}
+.nav-item:hover { background: #f0f7ff; }
 .nav-item.active {
   background-color: #003366;
   color: white;
   border-left-color: #fca503;
 }
-.nav-divider {
-  border-top: 1px solid #eee;
-  margin: 5px 25px;
-  border-bottom: none;
-}
+.nav-divider { border: none; border-top: 1px solid #eee; margin: 5px 0; }
 
-/* Content */
+/* ================= PAGE CONTENT ================= */
 .page-content {
   flex: 1;
+  padding: 20px;
   background-color: #eef8ff;
-  padding: 0;
-
-  /* Không cho scroll ở container cha */
-  overflow: hidden;
-
-  width: 100%;
-  height: calc(100vh - 64px);
-
-  display: flex;
-  justify-content: center;
-  align-items: flex-start;
-}
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 25px;
-  position: relative; /* để dropdown bám vào */
+  overflow-y: auto;           /* cuộn dọc */
+  overflow-x: hidden;         /* ẩn cuộn ngang */
+  word-wrap: break-word;
 }
 
-/* bọc chuông – để click dễ hơn */
-.bell-wrapper {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
+.page-content * {
+  max-width: 100%;            /* không tràn ra ngoài */
+  word-break: break-word;
 }
 
-/* Panel thông báo (màu xanh đậm) */
-.notification-panel {
-  position: absolute;
-  top: 60px;
-  right: 140px;
-  background-color: #003366;
-  color: #ffffff;
-  padding: 16px 20px;
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-  min-width: 260px;
-  z-index: 1200;
+/* ================= FOOTER ================= */
+footer {
+  margin-top: auto;           /* luôn ép footer xuống đáy */
 }
 
-.notification-panel h4 {
-  margin: 0 0 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-  padding-bottom: 6px;
-}
-
-.notification-panel ul {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 14px;
-}
-
-/* ===== Dropdown user ===== */
-
-.user-menu {
-  position: absolute;
-  top: 60px;
-  right: 0;
-  background-color: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  padding: 6px 0;
-  min-width: 180px;
-  z-index: 1300;
-}
-
-.user-menu-item {
-  width: 100%;
-  padding: 8px 16px;
-  border: none;
-  background: transparent;
-  text-align: left;
-  cursor: pointer;
-  font-size: 14px;
-  color: #1e2a5e;
-}
-
-.user-menu-item:hover {
-  background-color: #f0f7ff;
-}
-
-.user-menu-item-danger {
-  color: #b3261e;
-}
-/* ===== USER MENU DROPDOWN dùng chung Tutor + Student ===== */
-
-.user-menu-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-/* .user-info, .user-avatar đã có rồi trong file này */
-
-.user-dropdown-card {
-  position: absolute;
-  top: 52px;          /* ngay dưới header */
-  right: 0;
-  background: #ffffff;
-  border-radius: 16px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
-  padding: 12px 18px;
-  min-width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  z-index: 1200;
-}
-
-.user-dropdown-item {
-  background: transparent;
-  border: none;
-  padding: 4px 0;
-  text-align: left;
-  font-size: 15px;
-  color: #003366;
-  cursor: pointer;
-}
-
-.user-dropdown-item:hover {
-  text-decoration: underline;
-}
-
-.user-dropdown-danger {
-  color: #d93025;
-}
+/* ================= SCROLLBAR ================= */
+.page-content::-webkit-scrollbar { width: 7px; }
+.page-content::-webkit-scrollbar-thumb { background: #003366; border-radius: 6px; }

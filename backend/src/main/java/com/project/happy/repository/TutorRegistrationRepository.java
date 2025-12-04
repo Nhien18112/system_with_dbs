@@ -20,10 +20,15 @@ public interface TutorRegistrationRepository extends JpaRepository<TutorRegistra
 
     List<TutorRegistrationEntity> findByStatus(TutorRegistrationStatus status);
 
-    List<TutorRegistrationEntity> findByStudentIdAndStatus(String studentId, TutorRegistrationStatus status);
+    List<TutorRegistrationEntity> findByStudentIdAndStatus(Integer studentId, TutorRegistrationStatus status);
 
     @Query("select t from TutorRegistrationEntity t where t.status = :status and t.requestTime <= :cutoff")
     List<TutorRegistrationEntity> findByStatusAndRequestTimeBefore(@Param("status") TutorRegistrationStatus status, @Param("cutoff") LocalDateTime cutoff);
 
-    boolean existsByStudentIdAndStatusIn(String studentId, Collection<TutorRegistrationStatus> statuses);
+    boolean existsByStudentIdAndStatusIn(Integer studentId, Collection<TutorRegistrationStatus> statuses);
+    
+    /**
+     * Find registrations by tutor id and status
+     */
+    List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status);
 }

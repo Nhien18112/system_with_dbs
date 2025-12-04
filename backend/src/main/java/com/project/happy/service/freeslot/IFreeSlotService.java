@@ -1,12 +1,12 @@
 package com.project.happy.service.freeslot;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.util.List;
-
 import com.project.happy.dto.freeslot.FreeSlotRequest;
 import com.project.happy.dto.freeslot.FreeSlotResponse;
 import com.project.happy.entity.TutorAvailability;
+
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
 
 public interface IFreeSlotService {
     

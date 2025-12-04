@@ -1,18 +1,25 @@
 package com.project.happy.controller.tutor;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-import com.project.happy.facade.TutorRegistrationFacade;
-import com.project.happy.service.tutor.MatchingEngine;
+import java.util.List;
+import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.project.happy.entity.TutorRegistrationEntity;
+import com.project.happy.facade.TutorRegistrationFacade;
+import com.project.happy.service.tutor.MatchingEngine;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/tutor-registration")
@@ -26,19 +33,15 @@ public class TutorRegistrationController {
         this.facade = facade;
     }
 
-    public static record RegisterRequest(@NotBlank String studentId, @NotBlank String subject, String tutorId) {}
+    public static record RegisterRequest(@jakarta.validation.constraints.NotNull Integer studentId, @jakarta.validation.constraints.NotNull Integer subjectId, Integer tutorId) {}
 
     @PostMapping("/register-tutor")
     public ResponseEntity<?> registerTutor(@Valid @RequestBody RegisterRequest request) {
-        try {
-            TutorRegistrationEntity saved = facade.createRegistration(request.studentId(), request.subject(), request.tutorId());
-            return ResponseEntity.ok(Map.of("registrationId", saved.getId(), "status", saved.getStatus()));
-        } catch (Exception ex) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "Không lưu được dữ liệu, vui lòng thử lại"));
-        }
+        TutorRegistrationEntity saved = facade.createRegistration(request.studentId(), request.subjectId(), request.tutorId());
+        return ResponseEntity.ok(Map.of("registrationId", saved.getId(), "status", saved.getStatus()));
     }
 
-    public static record CancelRequest(Long registrationId, @NotBlank String studentId) {}
+    public static record CancelRequest(Long registrationId, @jakarta.validation.constraints.NotNull Integer studentId) {}
 
     @PostMapping("/cancel-registration")
     public ResponseEntity<?> cancelRegistration(@Valid @RequestBody CancelRequest request) {
@@ -52,5 +55,67 @@ public class TutorRegistrationController {
         List<MatchingEngine.TutorSuggestion> suggestions = facade.suggestTutors(subject);
         if (suggestions.isEmpty()) return ResponseEntity.ok(Map.of("message", "Không có tutor phù hợp"));
         return ResponseEntity.ok(suggestions);
+    }
+
+    // DTO used for responses
+    public static record RegistrationDto(Long id, Integer studentId, Integer tutorId, Integer subjectId, String registrationStatus, String createdAt, String approvedAt, String reasonForRejection) {}
+
+    @GetMapping("/pending-registrations")
+    public ResponseEntity<?> getPendingRegistrations(@RequestParam Integer tutorId) {
+        List<TutorRegistrationEntity> regs = facade.getPendingRegistrations(tutorId);
+        var dtos = regs.stream().map(r -> new RegistrationDto(
+                r.getId(), r.getStudentId(), r.getTutorId(), r.getSubjectId(), r.getStatus().name(),
+                r.getRequestTime() != null ? r.getRequestTime().toString() : null,
+                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null,
+                r.getReasonForRejection()
+        )).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    @GetMapping("/approved-students")
+    public ResponseEntity<?> getApprovedStudents(@RequestParam Integer tutorId) {
+        List<TutorRegistrationEntity> regs = facade.getApprovedStudents(tutorId);
+        var dtos = regs.stream().map(r -> new RegistrationDto(
+                r.getId(), r.getStudentId(), r.getTutorId(), r.getSubjectId(), r.getStatus().name(),
+                r.getRequestTime() != null ? r.getRequestTime().toString() : null,
+                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null,
+                r.getReasonForRejection()
+        )).toList();
+        return ResponseEntity.ok(dtos);
+    }
+
+    public static record ApproveRequest(@jakarta.validation.constraints.NotNull Integer tutorId) {}
+
+    @PostMapping("/{registrationId}/approve")
+    public ResponseEntity<?> approveRegistration(@PathVariable Long registrationId, @RequestBody ApproveRequest request) {
+        boolean ok = facade.approve(registrationId, request.tutorId());
+        if (ok) return ResponseEntity.ok(Map.of("result", "approved"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Không thể phê duyệt (không tồn tại hoặc quyền)"));
+    }
+
+    public static record RejectRequest(@jakarta.validation.constraints.NotNull Integer tutorId, String reason) {}
+
+    @PostMapping("/{registrationId}/reject")
+    public ResponseEntity<?> rejectRegistration(@PathVariable Long registrationId, @RequestBody RejectRequest request) {
+        boolean ok = facade.reject(registrationId, request.tutorId(), request.reason());
+        if (ok) return ResponseEntity.ok(Map.of("result", "rejected"));
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", "Không thể từ chối (không tồn tại hoặc quyền)"));
+    }
+
+    @GetMapping("/student/{studentId}/my-tutor")
+    public ResponseEntity<?> getMyTutor(@PathVariable Integer studentId) {
+        TutorRegistrationEntity registration = facade.getApprovedTutor(studentId); // Lưu ý: Bạn cần thêm hàm này vào Facade nữa hoặc gọi Service trực tiếp
+        
+        if (registration == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of("message", "Bạn chưa có Tutor nào được duyệt."));
+        }
+        
+        // Trả về thông tin cơ bản
+        return ResponseEntity.ok(Map.of(
+            "tutorId", registration.getTutorId(),
+            "subjectId", registration.getSubjectId(),
+            "status", registration.getStatus()
+        ));
     }
 }
