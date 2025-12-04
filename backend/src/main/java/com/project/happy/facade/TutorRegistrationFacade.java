@@ -1,12 +1,13 @@
 package com.project.happy.facade;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-import com.project.happy.service.tutor.ITutorRegistrationService;
-import com.project.happy.service.tutor.MatchingEngine;
+import java.util.List;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import com.project.happy.entity.TutorRegistrationEntity;
+import com.project.happy.service.tutor.ITutorRegistrationService;
+import com.project.happy.service.tutor.MatchingEngine;
 
 /**
  * Facade for TutorRegistration operations
@@ -50,5 +51,9 @@ public class TutorRegistrationFacade {
 
     public boolean reject(Long registrationId, Integer tutorId, String reason) {
         return registrationService.rejectById(registrationId, tutorId, reason);
+    }
+    
+    public TutorRegistrationEntity getApprovedTutor(Integer studentId) {
+        return registrationService.getApprovedTutor(studentId);
     }
 }

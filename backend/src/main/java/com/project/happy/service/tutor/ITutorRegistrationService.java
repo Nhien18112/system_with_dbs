@@ -1,9 +1,9 @@
 package com.project.happy.service.tutor;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.project.happy.entity.TutorRegistrationEntity;
 
 /**
  * Interface for TutorRegistration service operations
@@ -55,4 +55,6 @@ public interface ITutorRegistrationService {
     boolean approveById(Long registrationId, Integer tutorId);
 
     boolean rejectById(Long registrationId, Integer tutorId, String reason);
+
+    TutorRegistrationEntity getApprovedTutor(Integer studentId);
 }

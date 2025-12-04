@@ -92,3 +92,9 @@ export const cancelMeeting = async (meetingId, reason) => {
   return res.data;
 };
 
+export const getMyTutor = async (studentId) => {
+  const res = await apiClient.get(
+    `/api/tutor-registration/student/${studentId}/my-tutor`
+  );
+  return res.data; 
+};
