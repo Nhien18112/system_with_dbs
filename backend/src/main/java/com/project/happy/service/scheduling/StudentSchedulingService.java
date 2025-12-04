@@ -45,6 +45,11 @@ public class StudentSchedulingService implements IStudentSchedulingService {
             throw new IllegalArgumentException(
                     "Rất tiếc, khung giờ này đã có người đặt trước. Vui lòng làm mới trang và chọn một khung giờ khác.");
         }
+        TutorAvailability matchingSlot = availableSlots.stream()
+                .filter(s -> !startTime.toLocalTime().isBefore(s.getStartTime())
+                        && !endTime.toLocalTime().isAfter(s.getEndTime()))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Could not find matching availability slot"));
         Appointment appointment = new Appointment(
                 tutorId,
                 studentId,

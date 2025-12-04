@@ -1,14 +1,15 @@
 package com.project.happy.repository;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-import com.project.happy.entity.TutorRegistrationStatus;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
+import com.project.happy.entity.TutorRegistrationEntity;
+import com.project.happy.entity.TutorRegistrationStatus;
 
 /**
  * Adapter class implementing ITutorRegistrationRepository interface
@@ -62,5 +63,10 @@ public class TutorRegistrationRepositoryAdapter implements ITutorRegistrationRep
     @Override
     public List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status) {
         return jpaRepository.findByTutorIdAndStatus(tutorId, status);
+    }
+
+    @Override
+    public List<TutorRegistrationEntity> findByStudentId(Integer studentId) {
+        return jpaRepository.findByStudentId(studentId);
     }
 }

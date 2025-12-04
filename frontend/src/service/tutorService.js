@@ -75,3 +75,11 @@ export const rejectRegistration = async (registrationId, tutorId, reason) => {
   const res = await apiClient.post(`/api/tutor-registration/${registrationId}/reject`, { tutorId, reason });
   return res.data;
 };
+
+// Check if student has any approved registration
+export const getStudentApprovedRegistrations = async (studentId) => {
+  const res = await apiClient.get("/api/tutor-registration/student-registrations", {
+    params: { studentId }
+  });
+  return res.data; // List of registrations for this student
+};
