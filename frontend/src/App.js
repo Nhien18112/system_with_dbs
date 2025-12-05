@@ -3,10 +3,8 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import HomePage from "./pages/HomePage";
-import SsoLoginPage from "./pages/SsoLoginPage";
-import SsoForgotPage from "./pages/SsoForgotPage";
 import RegisterTutor from "./pages/student/RegisterTutor";
-
+import SsoCallbackPage from "./pages/SsoCallbackPage";
 
 import Layout from "./Layout";                 // tutor layout
 import TutorHome from "./pages/tutor/TutorHome";
@@ -32,15 +30,15 @@ function App() {
       {/* Landing */}
       <Route path="/" element={<HomePage />} />
 
-      {/* SSO */}
-      <Route path="/login" element={<SsoLoginPage />} />
-      <Route path="/sso/forgot" element={<SsoForgotPage />} />
+      {/* NƠI SSO REDIRECT VỀ SAU KHI LOGIN */}
+      <Route path="/sso/callback" element={<SsoCallbackPage />} />
 
       {/* ==== STUDENT (dùng StudentLayout + Outlet) ==== */}
       <Route path="/student" element={<StudentLayout />}>
         <Route index element={<StudentHome />} />
         <Route path="meetings" element={<StudentAppointment />} />
         <Route path="courses" element={<StudentCourses />} />
+        <Route path="courses/feedback/:id" element={<FeedbackPage />} />
         <Route path="profile" element={<StudentProfile />} />
         <Route path="register-tutor" element={<RegisterTutor />} />
       </Route>

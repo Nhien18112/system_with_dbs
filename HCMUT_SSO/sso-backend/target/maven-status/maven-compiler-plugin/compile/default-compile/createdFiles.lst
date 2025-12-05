@@ -1,0 +1,10 @@
+com\hcmut\sso\entity\SsoTicket.class
+com\hcmut\sso\entity\SsoUser.class
+com\hcmut\sso\config\WebClientConfig.class
+com\hcmut\sso\SsoApplication.class
+com\hcmut\sso\dto\LoginRequest.class
+com\hcmut\sso\repository\SsoUserRepository.class
+com\hcmut\sso\dto\LoginResponse.class
+com\hcmut\sso\controller\SsoAuthController.class
+com\hcmut\sso\dto\SsoValidationResponse.class
+com\hcmut\sso\repository\SsoTicketRepository.class

@@ -1,5 +1,5 @@
 ﻿﻿// src/Layout.js
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import Footer from "./components/Footer";
 import "./Layout.css";
@@ -7,33 +7,57 @@ import { Calendar, BookOpen, Settings, Bell } from "react-feather";
 
 import logoImg from "./assets/logo-bk.png";
 import avatarImg from "./assets/avatar.svg";
+import { useAuth } from "./AuthContext";
 
 const Layout = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth(); // <-- lấy từ AuthContext
 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNoti, setShowNoti] = useState(false);
 
   const path = location.pathname;
 
-  // ❗ Chỉ active khi đúng trang tương ứng
+  // Active sidebar
   const isMeetings = path.startsWith("/tutor/meetings");
   const isCourses = path.startsWith("/tutor/courses");
   const isProfile = path.startsWith("/tutor/profile");
-  // /tutor/home sẽ không rơi vào 3 cái này → không có gì active
+
+  // Guard: chỉ cho tutor dùng layout này
+  useEffect(() => {
+    if (!user) {
+      navigate("/");
+      return;
+    }
+    if (user.role !== "tutor") {
+      navigate("/student");
+    }
+  }, [user, navigate]);
+
+  // Trong lúc đang redirect thì không render gì
+  if (!user || user.role !== "tutor") {
+    return null;
+  }
+
+  const displayName = user.name || user.bkNetId || "Người dùng";
 
   const goHome = () => navigate("/tutor/home");
 
   const handleLogout = () => {
-    navigate("/"); // thoát về landing page
+    logout();       // xoá user trong AuthContext
+    navigate("/");  // quay lại trang landing
   };
 
   return (
     <div className="app-wrapper">
       {/* HEADER */}
       <header className="main-header">
-        <div className="header-left" onClick={goHome} style={{ cursor: "pointer" }}>
+        <div
+          className="header-left"
+          onClick={goHome}
+          style={{ cursor: "pointer" }}
+        >
           <img src={logoImg} alt="Logo" className="header-logo" />
           <h1 className="header-title">TUTOR SUPPORT SYSTEM</h1>
         </div>
@@ -48,35 +72,32 @@ const Layout = ({ children }) => {
               onClick={() => setShowNoti(!showNoti)}
             />
             {showNoti && (
-              <div className="noti-popup">
-                <div className="noti-title">Thông báo</div>
+              <div className="notification-panel">
+                <h4>Thông báo</h4>
                 <ul>
-                  <li>Bạn có 1 buổi tutor vào 14:00 chiều nay.</li>
-                  <li>1 sinh viên vừa gửi yêu cầu lịch mới.</li>
+                  <li>Không có thông báo</li>
                 </ul>
               </div>
             )}
           </div>
-
           {/* User + menu */}
-          <div
-            className="user-info clickable"
-            onClick={() => setShowUserMenu(!showUserMenu)}
-          >
+          <div className="user-info clickable" onClick={() => setShowUserMenu(!showUserMenu)}>
             <img src={avatarImg} alt="User" className="user-avatar" />
-            <span>Trần Văn B</span>
+            <span>{displayName}</span>
           </div>
 
           {showUserMenu && (
             <div className="user-menu">
-              <div className="user-menu-item" onClick={goHome}>
+              <button className="user-menu-item" onClick={goHome}>
                 Trang tổng quan
-              </div>
-              <div className="user-menu-item logout" onClick={handleLogout}>
+              </button>
+              <button className="user-menu-item user-menu-item-danger" onClick={handleLogout}>
                 Đăng xuất
-              </div>
+              </button>
             </div>
           )}
+
+
         </div>
       </header>
 

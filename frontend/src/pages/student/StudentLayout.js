@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Calendar, BookOpen, Settings, Bell } from "react-feather";
-
+import { useAuth } from "../../AuthContext";
 import Footer from "../../components/Footer";
 import "../../Layout.css"; // dùng lại layout giống tutor
 import logoImg from "../../assets/logo-bk.png";
@@ -13,7 +13,7 @@ const StudentLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-
+  const { user } = useAuth();
   const goHome = () => navigate("/student");
   const logout = () => navigate("/");
 
@@ -41,12 +41,12 @@ const StudentLayout = () => {
             style={{ cursor: "pointer" }}
           >
             <img src={avatarImg} alt="User" className="user-avatar" />
-            <span>Nguyễn Văn A</span>
+            <span>{user?.name || "Người dùng"}</span>
 
             {menuOpen && (
               <div className="user-menu">
                 <button className="user-menu-item" onClick={goHome}>
-                  Trang chủ
+                  Trang tổng quan
                 </button>
                 <button className="user-menu-item logout" onClick={logout}>
                   Đăng xuất

@@ -1,0 +1,195 @@
+.sso-page {
+  min-height: 100vh;
+  background: #f7f7f7;
+  display: flex;
+  flex-direction: column;
+}
+
+.sso-header {
+  background: #003366;
+  color: white;
+  padding: 10px 40px;
+}
+
+.sso-header-inner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.sso-logo img {
+  height: 48px;
+}
+
+.sso-header-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.sso-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 0 40px;
+}
+
+.sso-card {
+  display: flex;
+  max-width: 1000px;
+  width: 100%;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sso-left,
+.sso-right {
+  padding: 24px 30px;
+}
+
+.sso-left {
+  width: 55%;
+  border-right: 1px solid #eee;
+}
+
+.sso-right {
+  width: 45%;
+  font-size: 14px;
+  color: #444;
+}
+
+.sso-alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #ffe6e6;
+  border: 1px solid #ff9999;
+  color: #b00020;
+  padding: 10px 12px;
+  border-radius: 4px;
+  margin-bottom: 16px;
+}
+
+.sso-alert-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #b00020;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+.sso-left-title {
+  font-size: 18px;
+  margin: 0 0 20px;
+  color: #333;
+}
+
+.sso-form-group {
+  margin-bottom: 14px;
+}
+
+.sso-label {
+  display: block;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.sso-input {
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.sso-form-remember {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 13px;
+  margin: 10px 0 18px;
+}
+
+.sso-form-actions {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.sso-btn {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.sso-btn-primary {
+  background: #003366;
+  color: white;
+}
+
+.sso-btn-secondary {
+  background: #e0e0e0;
+}
+
+.sso-forgot-link {
+  border: none;
+  background: none;
+  color: #003366;
+  text-decoration: underline;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* RIGHT SIDE */
+
+.sso-lang-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  color: #8b0000;
+  font-weight: 600;
+}
+
+.sso-label-strong {
+  margin-right: 6px;
+}
+
+.sso-lang-active {
+  text-decoration: underline;
+}
+
+.sso-lang-link {
+  cursor: pointer;
+}
+
+.sso-section {
+  margin-top: 10px;
+}
+
+.sso-section-title {
+  margin: 0 0 6px;
+  color: #8b0000;
+  font-size: 15px;
+}
+
+.sso-section p {
+  margin: 4px 0;
+}
+
+.sso-footer {
+  margin-top: 18px;
+  font-size: 12px;
+  color: #666;
+}
+.sso-footer a {
+  color: #003366;
+}

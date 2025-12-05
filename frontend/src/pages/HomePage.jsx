@@ -8,9 +8,12 @@ import heroImage from "../assets/illus.png";
 const HomePage = () => {
   const navigate = useNavigate();
 
-  const handleLoginClick = () => {
-    navigate("/login");
-  };
+// Trong HomePage.js
+const handleLoginClick = () => {
+  const service = encodeURIComponent(window.location.origin + "/sso/callback");
+  window.location.href = `http://localhost:5173/login?service=${service}`;
+};
+
 
   return (
     <div className="landing-page">
