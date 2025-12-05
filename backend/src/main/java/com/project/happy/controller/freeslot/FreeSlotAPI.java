@@ -31,7 +31,7 @@ public class FreeSlotAPI {
     public ResponseEntity<FreeSlotResponse> getDaily(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date
     ) {
-        Long tutorId = 1L; // Mock ID
+        Long tutorId = 13L;
         return ResponseEntity.ok(service.getDailySchedule(tutorId, date));
     }
 
@@ -48,7 +48,7 @@ public class FreeSlotAPI {
     // API Lưu lịch - Ghi đè (POST)
     @PostMapping("/daily")
     public ResponseEntity<?> overwriteSchedule(@RequestBody FreeSlotRequest request) {
-        Long tutorId = 1L; // Mock ID
+        Long tutorId = 13L; // Mock ID
         try {
             // Gọi Service và nhận về danh sách cảnh báo (nếu có)
             List<String> warnings = service.overwriteDailySchedule(tutorId, request);

@@ -102,15 +102,15 @@ public class StudentSchedulingService implements IStudentSchedulingService {
             appointmentRepo.save(appointment); // Sửa: Dùng save() để update
 
             // Trả lại slot
-            try {
-                freeSlotService.releaseSlot(
-                        appointment.getTutorId(),
-                        appointment.getStartTime().toLocalDate(),
-                        appointment.getStartTime().toLocalTime(),
-                        appointment.getEndTime().toLocalTime());
-            } catch (Exception e) {
-                System.err.println("Lỗi khi trả lịch rảnh: " + e.getMessage());
-            }
+            // try {
+            //     freeSlotService.releaseSlot(
+            //             appointment.getTutorId(),
+            //             appointment.getStartTime().toLocalDate(),
+            //             appointment.getStartTime().toLocalTime(),
+            //             appointment.getEndTime().toLocalTime());
+            // } catch (Exception e) {
+            //     System.err.println("Lỗi khi trả lịch rảnh: " + e.getMessage());
+            // }
         }
         return ok;
     }
