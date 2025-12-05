@@ -39,12 +39,6 @@ public class TutorRegistrationEntity {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
-    @Column(name = "expires_at")
-    private LocalDateTime expiresAt;
-
-    @Column(name = "reason_for_rejection")
-    private String reasonForRejection;
-
     public TutorRegistrationEntity() {}
 
     public TutorRegistrationEntity(Integer studentId, Integer tutorId, Integer subjectId, TutorRegistrationStatus status, LocalDateTime requestTime) {
@@ -111,19 +105,16 @@ public class TutorRegistrationEntity {
         this.approvedAt = approvedAt;
     }
 
-    public LocalDateTime getExpiresAt() {
-        return expiresAt;
-    }
-
-    public void setExpiresAt(LocalDateTime expiresAt) {
-        this.expiresAt = expiresAt;
-    }
-
-    public String getReasonForRejection() {
-        return reasonForRejection;
-    }
-
-    public void setReasonForRejection(String reasonForRejection) {
-        this.reasonForRejection = reasonForRejection;
+    @Override
+    public String toString() {
+        return "TutorRegistrationEntity{" +
+                "id=" + id +
+                ", studentId=" + studentId +
+                ", tutorId=" + tutorId +
+                ", subjectId=" + subjectId +
+                ", status=" + status +
+                ", requestTime=" + requestTime +
+                ", approvedAt=" + approvedAt +
+                '}';
     }
 }

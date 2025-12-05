@@ -7,7 +7,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 CREATE DATABASE IF NOT EXISTS SW_PROJECT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE SW_PROJECT;
 
--- Bảng người dùng (cải tiến với fields cho AI matching)
+-- Bảng người dùng (cải tiến với fields cho AI matching và slot cho tutor)
 CREATE TABLE users (
     user_id INT AUTO_INCREMENT PRIMARY KEY,
     bk_net_id VARCHAR(50) UNIQUE NOT NULL,
@@ -21,6 +21,8 @@ CREATE TABLE users (
     gpa DECIMAL(3,2),
     year_of_study INT,
     qualifications TEXT,
+    max_slots INT DEFAULT 15, -- Giới hạn số lượng sinh viên tutor có thể nhận
+    current_slots INT DEFAULT 0, -- Số lượng sinh viên hiện tại
     status ENUM('ACTIVE', 'INACTIVE', 'SUSPENDED') DEFAULT 'ACTIVE',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -52,19 +54,15 @@ CREATE TABLE tutor_expertise (
     FOREIGN KEY (subject_id) REFERENCES subjects(subject_id) ON DELETE CASCADE
 );
 
--- Bảng đăng ký tutor của sinh viên (cải tiến với reason_for_rejection)
+-- Bảng đăng ký tutor của sinh viên (theo yêu cầu: chỉ lưu sinh viên đã được duyệt)
 CREATE TABLE tutor_registrations (
     registration_id INT AUTO_INCREMENT PRIMARY KEY,
     student_id INT NOT NULL,
     tutor_id INT NOT NULL,
     subject_id INT NOT NULL,
     registration_status ENUM('PENDING', 'APPROVED', 'REJECTED', 'CANCELLED') DEFAULT 'PENDING',
-    request_message TEXT,
-    reason_for_rejection TEXT, -- New field
-    match_score DECIMAL(5,2), -- AI matching score
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     approved_at TIMESTAMP NULL,
-    expires_at TIMESTAMP NOT NULL,
     FOREIGN KEY (student_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (tutor_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (subject_id) REFERENCES subjects(subject_id) ON DELETE CASCADE
@@ -142,7 +140,6 @@ CREATE TABLE appointments (
     FOREIGN KEY (availability_id) REFERENCES tutor_availability(availability_id) 
         ON DELETE CASCADE
 );
-
 
 -- Bảng đăng ký tham gia buổi tư vấn
 CREATE TABLE consultation_registrations (
@@ -335,6 +332,7 @@ CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_bk_net_id ON users(bk_net_id);
 CREATE INDEX idx_users_gpa ON users(gpa);
 CREATE INDEX idx_users_faculty ON users(faculty);
+CREATE INDEX idx_users_slots ON users(current_slots, max_slots);
 
 CREATE INDEX idx_tutor_availability_tutor_date ON tutor_availability(tutor_id, available_date);
 CREATE INDEX idx_tutor_availability_status ON tutor_availability(status);
@@ -394,6 +392,7 @@ BEGIN
     DECLARE v_tutor_exp INT;
     DECLARE v_proficiency_level VARCHAR(20);
     DECLARE v_faculty_match BOOLEAN DEFAULT FALSE;
+    DECLARE v_tutor_slots_available INT;
     
     -- Get student GPA
     SELECT gpa INTO v_student_gpa FROM users WHERE user_id = p_student_id;
@@ -409,6 +408,10 @@ BEGIN
     FROM users s
     JOIN users t ON s.faculty = t.faculty
     WHERE s.user_id = p_student_id AND t.user_id = p_tutor_id;
+    
+    -- Check tutor slots availability
+    SELECT (max_slots - current_slots) INTO v_tutor_slots_available
+    FROM users WHERE user_id = p_tutor_id;
     
     -- Calculate score (simplified algorithm)
     SET v_score = 50; -- Base score
@@ -436,10 +439,46 @@ BEGIN
         SET v_score = v_score + 10;
     END IF;
     
+    -- Slots availability bonus (more slots available = higher score)
+    IF v_tutor_slots_available IS NOT NULL AND v_tutor_slots_available > 0 THEN
+        SET v_score = v_score + (v_tutor_slots_available * 1.5);
+    END IF;
+    
     -- Ensure score is between 0-100
     SET v_score = GREATEST(0, LEAST(100, v_score));
     
     RETURN v_score;
+END //
+
+-- Procedure để kiểm tra và cập nhật số lượng slot của tutor
+CREATE PROCEDURE check_and_update_tutor_slots(
+    IN p_tutor_id INT,
+    IN p_action ENUM('INCREMENT', 'DECREMENT')
+)
+BEGIN
+    DECLARE v_current_slots INT;
+    DECLARE v_max_slots INT;
+    
+    SELECT current_slots, max_slots INTO v_current_slots, v_max_slots
+    FROM users WHERE user_id = p_tutor_id AND role = 'TUTOR';
+    
+    IF p_action = 'INCREMENT' THEN
+        IF v_current_slots < v_max_slots THEN
+            UPDATE users 
+            SET current_slots = current_slots + 1
+            WHERE user_id = p_tutor_id;
+        ELSE
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tutor has reached maximum slots';
+        END IF;
+    ELSEIF p_action = 'DECREMENT' THEN
+        IF v_current_slots > 0 THEN
+            UPDATE users 
+            SET current_slots = current_slots - 1
+            WHERE user_id = p_tutor_id;
+        ELSE
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'No slots to decrement';
+        END IF;
+    END IF;
 END //
 
 -- Procedures
@@ -486,6 +525,23 @@ FOR EACH ROW
 BEGIN
     IF NEW.year_of_study IS NOT NULL AND (NEW.year_of_study < 1 OR NEW.year_of_study > 6) THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Year of study must be between 1 and 6';
+    END IF;
+END //
+
+CREATE TRIGGER validate_tutor_slots
+BEFORE INSERT ON users
+FOR EACH ROW
+BEGIN
+    IF NEW.role = 'TUTOR' THEN
+        IF NEW.max_slots IS NULL THEN
+            SET NEW.max_slots = 15;
+        END IF;
+        IF NEW.current_slots IS NULL THEN
+            SET NEW.current_slots = 0;
+        END IF;
+        IF NEW.current_slots > NEW.max_slots THEN
+            SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Current slots cannot exceed max slots';
+        END IF;
     END IF;
 END //
 
@@ -581,6 +637,70 @@ BEGIN
     
     IF tutor_role != 'TUTOR' THEN
         SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'User is not a tutor';
+    END IF;
+END //
+
+-- Trigger để kiểm tra slot của tutor khi đăng ký
+CREATE TRIGGER check_tutor_slots_before_registration
+BEFORE INSERT ON tutor_registrations
+FOR EACH ROW
+BEGIN
+    DECLARE v_current_slots INT;
+    DECLARE v_max_slots INT;
+    
+    SELECT current_slots, max_slots INTO v_current_slots, v_max_slots
+    FROM users WHERE user_id = NEW.tutor_id;
+    
+    IF v_current_slots >= v_max_slots THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Tutor has reached maximum number of students';
+    END IF;
+END //
+
+-- Nếu một đăng ký được chèn trực tiếp với trạng thái APPROVED,
+-- đảm bảo trường `approved_at` được đặt và cập nhật slot tutor.
+CREATE TRIGGER set_approved_at_before_insert_tutor_registrations
+BEFORE INSERT ON tutor_registrations
+FOR EACH ROW
+BEGIN
+    IF NEW.registration_status = 'APPROVED' THEN
+        IF NEW.approved_at IS NULL THEN
+            SET NEW.approved_at = CURRENT_TIMESTAMP;
+        END IF;
+    END IF;
+END //
+
+-- Nếu một đăng ký được cập nhật thành APPROVED, đặt `approved_at` trước khi lưu
+CREATE TRIGGER set_approved_at_before_update_tutor_registrations
+BEFORE UPDATE ON tutor_registrations
+FOR EACH ROW
+BEGIN
+    IF NEW.registration_status = 'APPROVED' AND OLD.registration_status != 'APPROVED' THEN
+        IF NEW.approved_at IS NULL THEN
+            SET NEW.approved_at = CURRENT_TIMESTAMP;
+        END IF;
+    END IF;
+END //
+
+-- Nếu một đăng ký được chèn trực tiếp với trạng thái APPROVED,
+-- tăng `current_slots` của tutor ngay sau khi insert
+CREATE TRIGGER update_tutor_slots_on_insert_approval
+AFTER INSERT ON tutor_registrations
+FOR EACH ROW
+BEGIN
+    IF NEW.registration_status = 'APPROVED' THEN
+        CALL check_and_update_tutor_slots(NEW.tutor_id, 'INCREMENT');
+    END IF;
+END //
+
+-- Trigger để cập nhật slot khi đăng ký được approved
+CREATE TRIGGER update_tutor_slots_on_approval
+AFTER UPDATE ON tutor_registrations
+FOR EACH ROW
+BEGIN
+    IF NEW.registration_status = 'APPROVED' AND OLD.registration_status != 'APPROVED' THEN
+        CALL check_and_update_tutor_slots(NEW.tutor_id, 'INCREMENT');
+    ELSEIF NEW.registration_status != 'APPROVED' AND OLD.registration_status = 'APPROVED' THEN
+        CALL check_and_update_tutor_slots(NEW.tutor_id, 'DECREMENT');
     END IF;
 END //
 
@@ -789,6 +909,9 @@ SELECT
     u.user_id,
     u.full_name,
     u.email,
+    u.current_slots,
+    u.max_slots,
+    (u.max_slots - u.current_slots) as available_slots,
     COUNT(DISTINCT f.feedback_id) as total_feedbacks,
     AVG(f.rating) as average_rating,
     COUNT(DISTINCT c.consultation_id) as total_consultations,
@@ -802,7 +925,7 @@ LEFT JOIN appointments a ON u.user_id = a.tutor_id
 LEFT JOIN tutor_registrations tr ON u.user_id = tr.tutor_id
 LEFT JOIN learning_materials lm ON u.user_id = lm.tutor_id
 WHERE u.role = 'TUTOR'
-GROUP BY u.user_id, u.full_name, u.email;
+GROUP BY u.user_id, u.full_name, u.email, u.current_slots, u.max_slots;
 
 -- View cho báo cáo sử dụng hệ thống
 CREATE VIEW system_usage_report AS
@@ -881,31 +1004,57 @@ WHERE c.consultation_date >= CURRENT_DATE
 AND c.status IN ('SCHEDULED', 'ONGOING')
 ORDER BY session_date, start_time;
 
--- Bây giờ chèn dữ liệu mẫu (giống như PostgreSQL nhưng với cú pháp MySQL)
--- Insert users
-INSERT INTO users (bk_net_id, email, full_name, role, faculty, major, phone_number, gpa, year_of_study, qualifications) VALUES
--- Tutors
-('tutor001', 'tutor001@hcmut.edu.vn', 'Nguyễn Văn A', 'TUTOR', 'Computer Science', 'Software Engineering', '0901111111', NULL, NULL, 'MSc in Computer Science, 5 years teaching experience'),
-('tutor002', 'tutor002@hcmut.edu.vn', 'Trần Thị B', 'TUTOR', 'Computer Science', 'Artificial Intelligence', '0902222222', NULL, NULL, 'PhD in AI, Google AI Residency, 3 publications'),
-('tutor003', 'tutor003@hcmut.edu.vn', 'Lê Văn C', 'TUTOR', 'Electrical Engineering', 'Electronics', '0903333333', NULL, NULL, 'BEng in Electronics, Industry expert with 8 years experience'),
-('tutor004', 'tutor004@hcmut.edu.vn', 'Phạm Thị D', 'TUTOR', 'Mechanical Engineering', 'Robotics', '0904444444', NULL, NULL, 'MEng in Robotics, Research in autonomous systems'),
+-- View để xem slot của tutor
+CREATE VIEW tutor_slots_view AS
+SELECT 
+    u.user_id,
+    u.full_name as tutor_name,
+    u.email,
+    u.current_slots,
+    u.max_slots,
+    (u.max_slots - u.current_slots) as available_slots,
+    CASE 
+        WHEN u.current_slots >= u.max_slots THEN 'FULL'
+        WHEN u.current_slots >= u.max_slots * 0.8 THEN 'ALMOST_FULL'
+        ELSE 'AVAILABLE'
+    END as slot_status,
+    COUNT(tr.registration_id) as pending_registrations
+FROM users u
+LEFT JOIN tutor_registrations tr ON u.user_id = tr.tutor_id 
+    AND tr.registration_status = 'PENDING'
+WHERE u.role = 'TUTOR'
+GROUP BY u.user_id, u.full_name, u.email, u.current_slots, u.max_slots;
 
--- Students
-('student001', 'student001@hcmut.edu.vn', 'Hoàng Văn E', 'STUDENT', 'Computer Science', 'Software Engineering', '0905555555', 3.2, 3, NULL),
-('student002', 'student002@hcmut.edu.vn', 'Vũ Thị F', 'STUDENT', 'Computer Science', 'Data Science', '0906666666', 3.8, 2, NULL),
-('student003', 'student003@hcmut.edu.vn', 'Đặng Văn G', 'STUDENT', 'Electrical Engineering', 'Power Systems', '0907777777', 2.9, 4, NULL),
-('student004', 'student004@hcmut.edu.vn', 'Bùi Thị H', 'STUDENT', 'Mechanical Engineering', 'Automotive', '0908888888', 3.5, 3, NULL),
-('student005', 'student005@hcmut.edu.vn', 'Ngô Văn I', 'STUDENT', 'Computer Science', 'Cybersecurity', '0909999999', 3.1, 2, NULL),
-('student006', 'student006@hcmut.edu.vn', 'Đỗ Thị K', 'STUDENT', 'Computer Science', 'Software Engineering', '0911111111', 2.7, 4, NULL),
-('student007', 'student007@hcmut.edu.vn', 'Lý Văn L', 'STUDENT', 'Computer Science', 'Artificial Intelligence', '0912222222', 3.9, 2, NULL),
-('student008', 'student008@hcmut.edu.vn', 'Mai Thị M', 'STUDENT', 'Electrical Engineering', 'Electronics', '0913333333', 3.0, 3, NULL),
-('student009', 'nguyenvana@hcmut.edu.vn', 'Nguyễn Văn A', 'STUDENT', 'Computer Science', 'Information Systems', '0988888888', 3.5, 2, NULL),
--- Coordinators
-('coord001', 'coord001@hcmut.edu.vn', 'Lê Văn N', 'COORDINATOR', 'Computer Science', NULL, '0914444444', NULL, NULL, 'Department Coordinator'),
-('coord002', 'coord002@hcmut.edu.vn', 'Trần Thị O', 'COORDINATOR', 'Electrical Engineering', NULL, '0915555555', NULL, NULL, 'Program Manager');
+-- =============================================
+-- INSERT DỮ LIỆU MẪU
+-- =============================================
 
--- Continue inserting other data similarly...
--- (Lưu ý: Do giới hạn độ dài, phần insert dữ liệu còn lại sẽ tương tự như PostgreSQL nhưng với cú pháp MySQL)
+-- Insert users (sắp xếp lại để user_id của a.nguyenvan là 5)
+INSERT INTO users (bk_net_id, email, full_name, role, faculty, major, phone_number, gpa, year_of_study, qualifications, max_slots, current_slots) VALUES
+-- Tutors (ID: 1-4)
+('tutor001', 'tutor001@hcmut.edu.vn', 'Nguyễn Văn A', 'TUTOR', 'Computer Science', 'Software Engineering', '0901111111', NULL, NULL, 'MSc in Computer Science, 5 years teaching experience', 15, 5),
+('tutor002', 'tutor002@hcmut.edu.vn', 'Trần Thị B', 'TUTOR', 'Computer Science', 'Artificial Intelligence', '0902222222', NULL, NULL, 'PhD in AI, Google AI Residency, 3 publications', 15, 3),
+('tutor003', 'tutor003@hcmut.edu.vn', 'Lê Văn C', 'TUTOR', 'Electrical Engineering', 'Electronics', '0903333333', NULL, NULL, 'BEng in Electronics, Industry expert with 8 years experience', 15, 2),
+('tutor004', 'tutor004@hcmut.edu.vn', 'Phạm Thị D', 'TUTOR', 'Mechanical Engineering', 'Robotics', '0904444444', NULL, NULL, 'MEng in Robotics, Research in autonomous systems', 15, 1),
+
+-- Student a.nguyenvan (ID: 5 - như yêu cầu)
+('a.nguyenvan', 'a.Nguyenvan@hcmut.edu.vn', 'Nguyễn Văn A', 'STUDENT', 'Computer Science', 'Software Engineering', '0905555555', 3.2, 3, NULL, NULL, NULL),
+
+-- Students khác (ID: 6-12)
+('student002', 'student002@hcmut.edu.vn', 'Vũ Thị F', 'STUDENT', 'Computer Science', 'Data Science', '0906666666', 3.8, 2, NULL, NULL, NULL),
+('student003', 'student003@hcmut.edu.vn', 'Đặng Văn G', 'STUDENT', 'Electrical Engineering', 'Power Systems', '0907777777', 2.9, 4, NULL, NULL, NULL),
+('student004', 'student004@hcmut.edu.vn', 'Bùi Thị H', 'STUDENT', 'Mechanical Engineering', 'Automotive', '0908888888', 3.5, 3, NULL, NULL, NULL),
+('student005', 'student005@hcmut.edu.vn', 'Ngô Văn I', 'STUDENT', 'Computer Science', 'Cybersecurity', '0909999999', 3.1, 2, NULL, NULL, NULL),
+('student006', 'student006@hcmut.edu.vn', 'Đỗ Thị K', 'STUDENT', 'Computer Science', 'Software Engineering', '0911111111', 2.7, 4, NULL, NULL, NULL),
+('student007', 'student007@hcmut.edu.vn', 'Lý Văn L', 'STUDENT', 'Computer Science', 'Artificial Intelligence', '0912222222', 3.9, 2, NULL, NULL, NULL),
+('student008', 'student008@hcmut.edu.vn', 'Mai Thị M', 'STUDENT', 'Electrical Engineering', 'Electronics', '0913333333', 3.0, 3, NULL, NULL, NULL),
+
+-- Tutor b.tranvan (ID: 13 - thêm vào cho test case)
+('b.tranvan', 'b.Tranvan@hcmut.edu.vn', 'Trần Văn B', 'TUTOR', 'Computer Science', 'Software Engineering', '0914444444', NULL, NULL, 'MSc in Computer Science, 4 years teaching experience', 15, 0),
+
+-- Coordinators (ID: 14-15)
+('coord001', 'coord001@hcmut.edu.vn', 'Lê Văn N', 'COORDINATOR', 'Computer Science', NULL, '0915555555', NULL, NULL, 'Department Coordinator', NULL, NULL),
+('coord002', 'coord002@hcmut.edu.vn', 'Trần Thị O', 'COORDINATOR', 'Electrical Engineering', NULL, '0916666666', NULL, NULL, 'Program Manager', NULL, NULL);
 
 -- Insert subjects
 INSERT INTO subjects (subject_code, subject_name, faculty, description, difficulty_level) VALUES
@@ -920,20 +1069,30 @@ INSERT INTO subjects (subject_code, subject_name, faculty, description, difficul
 ('ME1001', 'Cơ Học Ứng Dụng', 'Mechanical Engineering', 'Môn học về cơ học và động lực học', 'INTERMEDIATE'),
 ('ME1002', 'Robot Công Nghiệp', 'Mechanical Engineering', 'Môn học về robot và tự động hóa', 'ADVANCED');
 
--- Insert tutor_expertise (ĐÃ SỬA - thêm dấu ; cuối cùng)
+-- Insert tutor_expertise
 INSERT INTO tutor_expertise (tutor_id, subject_id, proficiency_level, years_of_experience, hourly_rate, is_available) VALUES
+-- Tutor 1 (Nguyễn Văn A)
 (1, 1, 'EXPERT', 5, 25.00, true),
 (1, 2, 'ADVANCED', 3, 20.00, true),
 (1, 6, 'EXPERT', 4, 22.00, true),
+
+-- Tutor 2 (Trần Thị B)
 (2, 3, 'EXPERT', 4, 30.00, true),
 (2, 5, 'ADVANCED', 2, 25.00, true),
+
+-- Tutor 3 (Lê Văn C)
 (3, 7, 'EXPERT', 6, 28.00, true),
 (3, 8, 'ADVANCED', 4, 24.00, true),
+
+-- Tutor 4 (Phạm Thị D)
 (4, 9, 'EXPERT', 5, 26.00, true),
-(4, 10, 'ADVANCED', 3, 22.00, true);
+(4, 10, 'ADVANCED', 3, 22.00, true),
 
+-- Tutor 13 (Trần Văn B - thêm vào)
+(13, 1, 'EXPERT', 4, 23.00, true),
+(13, 2, 'ADVANCED', 3, 20.00, true),
+(13, 6, 'INTERMEDIATE', 2, 18.00, true);
 
--- Insert rooms
 -- Insert rooms với JSON đúng cú pháp
 INSERT INTO rooms (room_code, building, floor, capacity, facilities, equipment, status) VALUES
 ('B1-101', 'Building B1', 1, 30, '["Projector", "Whiteboard", "AC"]', '["Computer", "Speakers"]', 'AVAILABLE'),
@@ -955,15 +1114,18 @@ INSERT INTO tutor_availability (tutor_id, available_date, start_time, end_time, 
 (3, '2024-01-17', '08:00', '10:00', 'AVAILABLE'),
 (3, '2024-01-19', '14:00', '16:00', 'AVAILABLE'),
 (4, '2024-01-18', '14:00', '16:00', 'AVAILABLE'),
-(4, '2024-01-20', '10:00', '12:00', 'AVAILABLE');
+(4, '2024-01-20', '10:00', '12:00', 'AVAILABLE'),
+(13, '2024-01-15', '13:00', '15:00', 'AVAILABLE'),  -- Tutor Trần Văn B
+(13, '2024-01-16', '10:00', '12:00', 'AVAILABLE'),
+(13, '2024-01-17', '14:00', '16:00', 'AVAILABLE');
 
 -- Insert tutor_registrations với match_score AI
-INSERT INTO tutor_registrations (student_id, tutor_id, subject_id, registration_status, request_message, reason_for_rejection, match_score, created_at, expires_at) VALUES
-(5, 1, 1, 'APPROVED', 'Em muốn học về Software Engineering, đặc biệt phần design patterns', NULL, 85.50, '2024-01-10 09:00:00', '2024-01-10 21:00:00'),
-(6, 2, 3, 'PENDING', 'Em cần hỗ trợ môn AI, gặp khó khăn với neural networks', NULL, 92.00, '2024-01-11 10:00:00', '2024-01-11 22:00:00'),
-(7, 3, 7, 'APPROVED', 'Cần học về mạch điện tử, đặc biệt phần transistor', NULL, 78.50, '2024-01-12 11:00:00', '2024-01-12 23:00:00'),
-(8, 4, 9, 'REJECTED', 'Học về cơ học ứng dụng cho kỳ thi sắp tới', 'Tutor không nhận thêm sinh viên trong tháng này', 65.00, '2024-01-13 14:00:00', '2024-01-14 02:00:00'),
-(9, 1, 6, 'PENDING', 'Cần học web development với React và Node.js', NULL, 88.00, '2024-01-14 15:00:00', '2024-01-14 03:00:00');
+-- LƯU Ý: KHÔNG có registration nào với status 'APPROVED' cho tutor b.tranvan (user_id 13)
+-- Để test case: sinh viên a.nguyenvan (user_id 5) đăng ký tutor b.tranvan (user_id 13)
+INSERT INTO tutor_registrations (student_id, tutor_id, subject_id, registration_status,  created_at) VALUES
+-- Các đăng ký khác
+
+(7, 3, 7, 'APPROVED', '2024-01-12 11:00:00');
 
 
 -- Insert consultations với reminder_sent
@@ -972,49 +1134,44 @@ INSERT INTO consultations (tutor_id, title, description, consultation_date, star
 (2, 'AI Introduction Session - Machine Learning Fundamentals', 'Giới thiệu về Trí tuệ Nhân tạo cơ bản, các thuật toán ML phổ biến', '2024-01-21', '14:00', '16:00', 'ONLINE', 30, 8, NULL, 'https://meet.google.com/abc-def-ghi', true, 'SCHEDULED'),
 (3, 'Electronics Lab Tutorial - Circuit Design', 'Hướng dẫn thực hành mạch điện tử, sử dụng oscilloscope và multimeter', '2024-01-22', '08:00', '10:00', 'OFFLINE', 15, 3, 6, NULL, false, 'SCHEDULED'),
 (4, 'Robotics Fundamentals - Industrial Applications', 'Kiến thức cơ bản về robot công nghiệp, programming và safety', '2024-01-23', '13:00', '15:00', 'HYBRID', 25, 6, 2, 'https://meet.google.com/xyz-uvw-rst', false, 'SCHEDULED'),
-(1, 'Web Development Crash Course', 'HTML, CSS, JavaScript cơ bản cho người mới bắt đầu', '2024-01-25', '10:00', '12:00', 'ONLINE', 40, 12, NULL, 'https://meet.google.com/web-dev-2024', true, 'SCHEDULED');
+(1, 'Web Development Crash Course', 'HTML, CSS, JavaScript cơ bản cho người mới bắt đầu', '2024-01-25', '10:00', '12:00', 'ONLINE', 40, 12, NULL, 'https://meet.google.com/web-dev-2024', true, 'SCHEDULED'),
+(13, 'Software Engineering for Beginners', 'Giới thiệu cơ bản về Software Engineering và các best practices', '2024-01-26', '14:00', '16:00', 'ONLINE', 25, 0, NULL, 'https://meet.google.com/se-beginner-2024', false, 'SCHEDULED');
 
 -- Insert appointments với reminder_sent
 INSERT INTO appointments (
     student_id, tutor_id, availability_id,
     topic, description,
     start_time, end_time,
-    appointment_status, reminder_sent,
+    appointment_status, reminder_sent, is_cancelled,
     created_at, approved_at
 ) VALUES
-(5, 1, 3,
- 'Hướng dẫn đồ án Software Engineering',
- 'Em cần hỗ trợ phần thiết kế database và architecture cho đồ án môn SE',
- '2024-01-14 09:00:00', '2024-01-14 10:00:00',
- 'APPROVED', true,
- '2024-01-14 09:00:00', '2024-01-14 10:00:00'),
-
+-- Các appointments khác
 (6, 2, 5,
  'Thắc mắc về Machine Learning Algorithms',
  'Cần giải thích về thuật toán SVM và ứng dụng thực tế',
  '2024-01-14 10:30:00', '2024-01-14 11:30:00',
- 'PENDING', false,
+ 'PENDING', false, false,
  '2024-01-14 10:30:00', NULL),
 
 (7, 3, 8,
  'Bài tập mạch điện tử nâng cao',
  'Gặp khó khăn với bài tập transistor và amplifier design',
  '2024-01-14 11:00:00', '2024-01-14 12:00:00',
- 'APPROVED', true,
+ 'APPROVED', true, false,
  '2024-01-14 11:00:00', '2024-01-14 14:00:00'),
 
 (9, 1, 1,
  'Tư vấn học phần và lộ trình học web development',
  'Cần tư vấn chọn môn học và lộ trình trở thành full-stack developer',
  '2024-01-14 15:00:00', '2024-01-14 16:00:00',
- 'PENDING', false,
+ 'PENDING', false, false,
  '2024-01-14 15:00:00', NULL),
 
 (10, 2, 6,
  'Hướng dẫn project Computer Vision',
  'Cần hỗ trợ implement object detection model cho project',
  '2024-01-15 08:00:00', '2024-01-15 09:00:00',
- 'APPROVED', false,
+ 'APPROVED', false, false,
  '2024-01-15 08:00:00', '2024-01-15 09:00:00');
 
 -- Insert consultation_registrations
@@ -1031,7 +1188,8 @@ INSERT INTO consultation_registrations (consultation_id, student_id, registratio
 (3, 8, 'REGISTERED', 0, '2024-01-14 11:30:00'),
 (4, 8, 'REGISTERED', 0, '2024-01-14 12:00:00'),
 (5, 9, 'REGISTERED', 0, '2024-01-14 13:00:00'),
-(5, 10, 'REGISTERED', 0, '2024-01-14 13:30:00');
+(5, 10, 'REGISTERED', 0, '2024-01-14 13:30:00'),
+(6, 5, 'REGISTERED', 0, '2024-01-14 14:00:00');  -- Đăng ký cho consultation của tutor b.tranvan
 
 -- Insert learning_materials với JSON đúng cú pháp
 INSERT INTO learning_materials (tutor_id, title, description, file_name, file_path, file_size, file_type, subject_id, library_id, is_public, tags, material_status, upload_date, approved_date, download_count, view_count) VALUES
@@ -1040,38 +1198,34 @@ INSERT INTO learning_materials (tutor_id, title, description, file_name, file_pa
 (3, 'Electronics Lab Manual - Complete Guide', 'Hướng dẫn thí nghiệm mạch điện tử đầy đủ', 'Electronics_Lab_Manual.pdf', '/materials/electronics_lab_manual.pdf', 4145728, 'PDF', 7, 'LIB_EE_003', true, '["electronics", "circuits", "lab manual"]', 'APPROVED', '2024-01-12 11:00:00', '2024-01-12 12:00:00', 8, 23),
 (4, 'Robotics Exercises and Projects', 'Bài tập thực hành và project robot công nghiệp', 'Robotics_Exercises.zip', '/materials/robotics_exercises.zip', 6242880, 'ZIP', 9, NULL, false, '["robotics", "industrial", "projects"]', 'PENDING', '2024-01-13 14:00:00', NULL, 0, 5),
 (1, 'Database Design Patterns and Best Practices', 'Các mẫu thiết kế database thông dụng và best practices', 'DB_Patterns_Best_Practices.pptx', '/materials/db_patterns_best_practices.pptx', 5194304, 'PPTX', 2, 'LIB_DB_004', true, '["database", "design patterns", "best practices"]', 'APPROVED', '2024-01-14 15:00:00', '2024-01-14 16:00:00', 12, 38),
-(2, 'Computer Vision Tutorial with OpenCV', 'Hướng dẫn Computer Vision sử dụng OpenCV và Python', 'CV_OpenCV_Tutorial.zip', '/materials/cv_opencv_tutorial.zip', 7340032, 'ZIP', 3, NULL, true, '["computer vision", "opencv", "python"]', 'APPROVED', '2024-01-15 16:00:00', '2024-01-15 17:00:00', 18, 42);
-
-
+(2, 'Computer Vision Tutorial with OpenCV', 'Hướng dẫn Computer Vision sử dụng OpenCV và Python', 'CV_OpenCV_Tutorial.zip', '/materials/cv_opencv_tutorial.zip', 7340032, 'ZIP', 3, NULL, true, '["computer vision", "opencv", "python"]', 'APPROVED', '2024-01-15 16:00:00', '2024-01-15 17:00:00', 18, 42),
+(13, 'Software Engineering Fundamentals', 'Tài liệu cơ bản về Software Engineering cho người mới bắt đầu', 'SE_Fundamentals.pdf', '/materials/se_fundamentals.pdf', 3123456, 'PDF', 1, NULL, true, '["software engineering", "fundamentals", "beginner"]', 'APPROVED', '2024-01-14 16:00:00', '2024-01-14 17:00:00', 5, 15);
 
 -- Insert feedback với anonymous option
 INSERT INTO feedback (student_id, tutor_id, consultation_id, appointment_id, rating, comment, is_anonymous, feedback_date) VALUES
 (5, 1, 1, NULL, 5, 'Buổi workshop rất bổ ích, tutor giải thích dễ hiểu và có nhiều ví dụ thực tế', false, '2024-01-20 11:30:00'),
 (6, 2, 2, NULL, 4, 'Nội dung tốt nhưng hơi nhanh, cần thêm thời gian cho Q&A', false, '2024-01-21 16:30:00'),
-(5, 1, NULL, 1, 5, 'Tutor hỗ trợ rất nhiệt tình, giải đáp mọi thắc mắc chi tiết', false, '2024-01-15 10:30:00'),
-(7, 3, NULL, 3, 4, 'Giải thích rõ ràng, giúp em hiểu bài tốt hơn và hoàn thành bài tập', true, '2024-01-16 11:30:00'),
+(5, 13, 6, NULL, 5, 'Buổi consultation rất hữu ích cho người mới bắt đầu', false, '2024-01-26 16:30:00'),
+(7, 3, NULL, 2, 4, 'Giải thích rõ ràng, giúp em hiểu bài tốt hơn và hoàn thành bài tập', true, '2024-01-16 11:30:00'),
 (9, 1, 1, NULL, 5, 'Rất hài lòng với buổi học, kiến thức thực tế và ứng dụng được ngay', false, '2024-01-20 12:00:00'),
-(10, 2, NULL, 5, 5, 'Tutor rất chuyên nghiệp, hỗ trợ kịp thời cho project của em', true, '2024-01-16 09:30:00');
+(10, 2, NULL, 4, 5, 'Tutor rất chuyên nghiệp, hỗ trợ kịp thời cho project của em', true, '2024-01-16 09:30:00');
 
 -- Insert progress_records với goals tracking
 INSERT INTO progress_records (tutor_id, student_id, consultation_id, appointment_id, learning_content, assessment, progress_notes, goals_set, goals_achieved, next_steps, record_date) VALUES
 (1, 5, 1, NULL, 'Software Development Lifecycle, Agile Methodology, Code Review Process', 'GOOD', 'Học viên tiếp thu tốt, có thể áp dụng vào đồ án ngay', 'Hoàn thành design document, Implement core features', 'Đã hoàn thành system design, đang implement', 'Code review, testing phase', '2024-01-20 11:00:00'),
-(1, 5, NULL, 1, 'Database Design Patterns, Normalization, Query Optimization', 'EXCELLENT', 'Học viên nắm vững kiến thức, có sáng tạo trong thiết kế', 'Design database schema, Optimize queries', 'Đã hoàn thành database design', 'Implement stored procedures, performance tuning', '2024-01-15 10:00:00'),
 (2, 6, 2, NULL, 'Introduction to Machine Learning, Supervised Learning Algorithms', 'GOOD', 'Học viên có hiểu biết cơ bản, cần thực hành thêm', 'Understand ML algorithms, Complete assignment', 'Đã hiểu basic concepts', 'Practice with datasets, implement algorithms', '2024-01-21 16:00:00'),
-(3, 7, NULL, 3, 'Transistor Circuits Analysis, Amplifier Design, Practical Applications', 'FAIR', 'Học viên cần ôn tập lại lý thuyết cơ bản', 'Complete circuit analysis, Build amplifier circuit', 'Đã hiểu transistor operation', 'Practice more problems, lab work', '2024-01-16 10:00:00'),
-(2, 10, NULL, 5, 'Computer Vision, Object Detection, OpenCV Implementation', 'EXCELLENT', 'Học viên tiến bộ nhanh, có khả năng research tốt', 'Implement object detection, Optimize model', 'Đã implement basic model', 'Fine-tuning, performance optimization', '2024-01-16 09:00:00');
+(3, 7, NULL, 2, 'Transistor Circuits Analysis, Amplifier Design, Practical Applications', 'FAIR', 'Học viên cần ôn tập lại lý thuyết cơ bản', 'Complete circuit analysis, Build amplifier circuit', 'Đã hiểu transistor operation', 'Practice more problems, lab work', '2024-01-16 10:00:00'),
+(2, 10, NULL, 4, 'Computer Vision, Object Detection, OpenCV Implementation', 'EXCELLENT', 'Học viên tiến bộ nhanh, có khả năng research tốt', 'Implement object detection, Optimize model', 'Đã implement basic model', 'Fine-tuning, performance optimization', '2024-01-16 09:00:00'),
+(13, 5, 6, NULL, 'Software Engineering Fundamentals, Requirements Engineering, System Design', 'EXCELLENT', 'Học viên có nền tảng tốt, tiếp thu nhanh', 'Complete basic SE concepts, Start small project', 'Đã nắm vững fundamentals', 'Start implementing small project', '2024-01-26 16:00:00');
 
-
-
--- Insert curriculum_frameworks
--- Insert lại curriculum_frameworks với coordinator_id đúng (13, 14)
+-- Insert curriculum_frameworks với coordinator_id đúng (14, 15)
 INSERT INTO curriculum_frameworks (coordinator_id, title, description, topics, duration_hours, learning_objectives, required_materials, status) VALUES
 (14, 'Software Engineering Foundation Program', 'Khung chương trình cơ bản cho Software Engineering từ beginner đến advanced', 'Requirements Engineering, System Design, Implementation, Testing, Deployment, Maintenance', 40, 'Nắm vững quy trình phát triển phần mềm, có thể tham gia team development', 'Laptop, IDE, Version Control System, Textbook', 'ACTIVE'),
 (15, 'Electronics and Circuit Design Curriculum', 'Chương trình toàn diện về điện tử và thiết kế mạch', 'Basic Circuits, Semiconductor Devices, Analog Circuits, Digital Circuits, PCB Design', 36, 'Hiểu và phân tích được mạch điện, thiết kế mạch cơ bản', 'Multimeter, Oscilloscope, Breadboard, Electronic Components', 'ACTIVE'),
 (14, 'AI/ML Comprehensive Learning Program', 'Chương trình học AI/ML từ cơ bản đến nâng cao', 'ML Algorithms, Deep Learning, Computer Vision, NLP, Model Evaluation', 32, 'Hiểu và áp dụng được các thuật toán ML, build AI applications', 'Python, Jupyter Notebook, ML Libraries, Datasets', 'ACTIVE'),
 (15, 'Robotics and Automation Foundation', 'Chương trình nền tảng về robotics và automation', 'Robot Kinematics, Control Systems, Sensors, Actuators, Programming', 28, 'Hiểu nguyên lý robot, lập trình robot cơ bản', 'Robot Kit, Programming Software, Simulation Tools', 'ACTIVE');
 
--- Insert lại reports với coordinator_id đúng (13, 14)
+-- Insert reports với coordinator_id đúng (14, 15)
 INSERT INTO reports (coordinator_id, report_type, report_title, report_period, generated_date, file_path, file_format, status, sent_date) VALUES
 (14, 'TUTOR_PERFORMANCE', 'Báo cáo hiệu suất Tutor tháng 1/2024', 'MONTHLY', '2024-01-31 17:00:00', '/reports/tutor_perf_jan2024.pdf', 'PDF', 'SENT', '2024-01-31 18:00:00'),
 (15, 'SYSTEM_USAGE', 'Báo cáo sử dụng hệ thống quý 1/2024', 'QUARTERLY', '2024-03-31 16:00:00', '/reports/system_usage_q1_2024.xlsx', 'EXCEL', 'GENERATED', NULL),
@@ -1080,26 +1234,30 @@ INSERT INTO reports (coordinator_id, report_type, report_title, report_period, g
 
 -- Insert notifications với đa dạng types
 INSERT INTO notifications (user_id, title, message, notification_type, is_read, priority, created_at, related_entity_type, related_entity_id, expires_at) VALUES
-(5, 'Đăng ký Tutor thành công', 'Đăng ký học với tutor Nguyễn Văn A đã được duyệt. Bắt đầu học từ 15/01/2024.', 'REGISTRATION', true, 'MEDIUM', '2024-01-10 21:00:00', 'TUTOR_REGISTRATION', 1, '2024-01-17 21:00:00'),
-(6, 'Yêu cầu đặt lịch chờ duyệt', 'Yêu cầu đặt lịch với tutor Trần Thị B đang chờ duyệt. Vui lòng chờ phản hồi trong 24h.', 'APPOINTMENT', false, 'LOW', '2024-01-14 10:30:00', 'APPOINTMENT', 2, '2024-01-15 10:30:00'),
-(7, 'Lịch hẹn đã được duyệt', 'Lịch hẹn với tutor Lê Văn C đã được duyệt. Thời gian: 17/01/2024, 08:00-10:00.', 'APPOINTMENT', true, 'MEDIUM', '2024-01-14 14:00:00', 'APPOINTMENT', 3, '2024-01-17 10:00:00'),
-(1, 'Có yêu cầu đặt lịch mới', 'Sinh viên Ngô Văn I muốn đặt lịch tư vấn học phần. Vui lòng xem xét và phản hồi.', 'APPOINTMENT', false, 'MEDIUM', '2024-01-14 15:00:00', 'APPOINTMENT', 4, '2024-01-16 15:00:00'),
+(5, 'Đăng ký Tutor thành công', 'Đăng ký học với tutor Trần Văn B đã được gửi. Vui lòng chờ phản hồi.', 'REGISTRATION', false, 'MEDIUM', '2024-01-14 09:05:00', 'TUTOR_REGISTRATION', 5, '2024-01-17 09:05:00'),
+(13, 'Có yêu cầu đăng ký Tutor mới', 'Sinh viên Nguyễn Văn A muốn đăng ký học với bạn. Vui lòng xem xét và phản hồi.', 'REGISTRATION', false, 'MEDIUM', '2024-01-14 09:05:00', 'TUTOR_REGISTRATION', 5, '2024-01-15 09:05:00'),
+(6, 'Yêu cầu đặt lịch chờ duyệt', 'Yêu cầu đặt lịch với tutor Trần Thị B đang chờ duyệt. Vui lòng chờ phản hồi trong 24h.', 'APPOINTMENT', false, 'LOW', '2024-01-14 10:30:00', 'APPOINTMENT', 1, '2024-01-15 10:30:00'),
+(7, 'Lịch hẹn đã được duyệt', 'Lịch hẹn với tutor Lê Văn C đã được duyệt. Thời gian: 14/01/2024, 11:00-12:00.', 'APPOINTMENT', true, 'MEDIUM', '2024-01-14 14:00:00', 'APPOINTMENT', 2, '2024-01-14 12:00:00'),
+(1, 'Có yêu cầu đặt lịch mới', 'Sinh viên Ngô Văn I muốn đặt lịch tư vấn học phần. Vui lòng xem xét và phản hồi.', 'APPOINTMENT', false, 'MEDIUM', '2024-01-14 15:00:00', 'APPOINTMENT', 3, '2024-01-16 15:00:00'),
 (9, 'Nhắc lịch buổi workshop', 'Buổi workshop Software Engineering sẽ diễn ra vào 20/01/2024, 09:00-11:00. Đừng quên tham gia!', 'REMINDER', false, 'HIGH', '2024-01-19 18:00:00', 'CONSULTATION', 1, '2024-01-20 11:00:00'),
 (2, 'Tài liệu mới đã được duyệt', 'Tài liệu "AI Lecture Notes" của bạn đã được duyệt và công bố cho sinh viên.', 'MATERIAL', true, 'LOW', '2024-01-11 11:00:00', 'LEARNING_MATERIAL', 2, '2024-01-18 11:00:00');
 
 -- Insert activity_logs
 INSERT INTO activity_logs (user_id, activity_type, activity_description, ip_address, user_agent, created_at) VALUES
 (5, 'LOGIN', 'User logged into system successfully', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '2024-01-14 08:00:00'),
+(5, 'TUTOR_REGISTRATION', 'Student registered for tutor Trần Văn B for Software Engineering', '192.168.1.100', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36', '2024-01-14 09:00:00'),
 (1, 'MATERIAL_UPLOAD', 'Tutor uploaded new learning material: Software Engineering Slides', '192.168.1.101', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36', '2024-01-14 09:00:00'),
 (6, 'APPOINTMENT_REQUEST', 'Student requested new appointment with tutor Trần Thị B', '192.168.1.102', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0', '2024-01-14 10:30:00'),
-(11, 'REPORT_GENERATION', 'Coordinator generated monthly tutor performance report', '192.168.1.103', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36', '2024-01-14 11:00:00'),
+(14, 'REPORT_GENERATION', 'Coordinator generated monthly tutor performance report', '192.168.1.103', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36', '2024-01-14 11:00:00'),
 (7, 'CONSULTATION_REGISTRATION', 'Student registered for Electronics Lab Tutorial consultation', '192.168.1.104', 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15', '2024-01-14 12:00:00'),
+(13, 'LOGIN', 'Tutor logged into system successfully', '192.168.1.107', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0', '2024-01-14 13:00:00'),
 (9, 'FEEDBACK_SUBMISSION', 'Student submitted feedback for Software Engineering workshop', '192.168.1.105', 'Mozilla/5.0 (Android 13; Mobile) AppleWebKit/537.36', '2024-01-20 11:30:00'),
 (2, 'APPOINTMENT_APPROVAL', 'Tutor approved appointment request from student', '192.168.1.106', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Edge/120.0.0.0', '2024-01-15 09:00:00');
 
 -- Insert matching_suggestions với JSON đúng cú pháp
 INSERT INTO matching_suggestions (student_id, tutor_id, subject_id, match_score, match_reasons, is_accepted, suggested_at, expires_at) VALUES
-(5, 1, 1, 85.50, '["Same faculty", "High tutor expertise", "Student needs help"]', true, '2024-01-09 08:00:00', '2024-01-16 08:00:00'),
+-- TEST CASE: suggestion cho sinh viên a.nguyenvan (5) và tutor b.tranvan (13)
+(5, 13, 1, 85.50, '["Same faculty", "High tutor expertise", "Tutor has available slots", "Student needs help with SE"]', NULL, '2024-01-13 08:00:00', '2024-01-20 08:00:00'),
 (6, 2, 3, 92.00, '["Perfect subject match", "Tutor has publications", "Student high GPA"]', NULL, '2024-01-10 09:00:00', '2024-01-17 09:00:00'),
 (7, 3, 7, 78.50, '["Faculty alignment", "Tutor industry experience", "Moderate match"]', true, '2024-01-11 10:00:00', '2024-01-18 10:00:00'),
 (9, 1, 6, 88.00, '["Web development focus", "Tutor expertise match", "Student interest"]', NULL, '2024-01-13 11:00:00', '2024-01-20 11:00:00'),
@@ -1108,111 +1266,76 @@ INSERT INTO matching_suggestions (student_id, tutor_id, subject_id, match_score,
 
 -- Insert payments (nếu có tính phí)
 INSERT INTO payments (student_id, tutor_id, appointment_id, consultation_id, amount, currency, payment_method, payment_status, transaction_id, payment_date) VALUES
-(5, 1, 1, NULL, 50.00, 'VND', 'BANK_TRANSFER', 'COMPLETED', 'TXN_00123456', '2024-01-14 11:00:00'),
-(7, 3, 3, NULL, 56.00, 'VND', 'CREDIT_CARD', 'COMPLETED', 'TXN_00123457', '2024-01-14 15:00:00'),
-(10, 2, 5, NULL, 60.00, 'VND', 'E_WALLET', 'COMPLETED', 'TXN_00123458', '2024-01-15 10:00:00'),
+(7, 3, 2, NULL, 56.00, 'VND', 'CREDIT_CARD', 'COMPLETED', 'TXN_00123457', '2024-01-14 15:00:00'),
+(10, 2, 4, NULL, 60.00, 'VND', 'E_WALLET', 'COMPLETED', 'TXN_00123458', '2024-01-15 10:00:00'),
 (9, 1, NULL, 1, 25.00, 'VND', 'BANK_TRANSFER', 'PENDING', NULL, NULL);
 
+-- =============================================
+-- KIỂM TRA DỮ LIỆU
+-- =============================================
 
--- Xem tất cả users
-SELECT * FROM users ORDER BY user_id;
--- Xem tất cả subjects
-SELECT * FROM subjects ORDER BY subject_id;
+-- Kiểm tra users
+SELECT user_id, bk_net_id, full_name, role, faculty, current_slots, max_slots 
+FROM users 
+ORDER BY user_id;
 
--- Xem tất cả tutor_expertise
-SELECT * FROM tutor_expertise ORDER BY expertise_id;
+-- Kiểm tra tutor_registrations của sinh viên a.nguyenvan (user_id 5)
+SELECT 
+    tr.registration_id,
+    s.full_name as student_name,
+    t.full_name as tutor_name,
+    sub.subject_name,
+    tr.registration_status,
+    tr.created_at
+FROM tutor_registrations tr
+JOIN users s ON tr.student_id = s.user_id
+JOIN users t ON tr.tutor_id = t.user_id
+JOIN subjects sub ON tr.subject_id = sub.subject_id
+WHERE s.bk_net_id = 'a.nguyenvan' 
+ORDER BY tr.created_at DESC;
 
--- Xem tất cả tutor_registrations
-SELECT * FROM tutor_registrations ORDER BY registration_id;
+-- Kiểm tra slot của tutor b.tranvan (user_id 13)
+SELECT 
+    user_id,
+    full_name,
+    current_slots,
+    max_slots,
+    (max_slots - current_slots) as available_slots
+FROM users 
+WHERE bk_net_id = 'b.tranvan';
 
--- Xem tất cả tutor_availability
-SELECT * FROM tutor_availability ORDER BY availability_id;
+-- Kiểm tra tất cả tutors và slot của họ
+SELECT 
+    user_id,
+    full_name,
+    email,
+    current_slots,
+    max_slots,
+    (max_slots - current_slots) as available_slots,
+    CASE 
+        WHEN current_slots >= max_slots THEN 'FULL'
+        WHEN current_slots >= max_slots * 0.8 THEN 'ALMOST_FULL'
+        ELSE 'AVAILABLE'
+    END as slot_status
+FROM users 
+WHERE role = 'TUTOR'
+ORDER BY user_id;
 
--- Xem tất cả consultations
-SELECT * FROM consultations ORDER BY consultation_id;
+-- Test trigger: Thử đăng ký khi tutor đã full slot
+-- Trước tiên, cập nhật tutor b.tranvan thành full slot
+UPDATE users SET current_slots = max_slots WHERE user_id = 13;
 
--- Xem tất cả appointments
-SELECT * FROM appointments ORDER BY appointment_id;
+-- Thử insert một registration mới (sẽ bị trigger chặn)
+-- INSERT INTO tutor_registrations (student_id, tutor_id, subject_id, registration_status, request_message, match_score, created_at, expires_at) 
+-- VALUES (6, 13, 1, 'PENDING', 'Test registration when tutor full', 80.00, NOW(), DATE_ADD(NOW(), INTERVAL 7 DAY));
 
--- Xem tất cả consultation_registrations
-SELECT * FROM consultation_registrations ORDER BY registration_id;
+-- Reset lại slot của tutor b.tranvan
+UPDATE users SET current_slots = 0 WHERE user_id = 13;
 
--- Xem tất cả learning_materials
-SELECT * FROM learning_materials ORDER BY material_id;
+-- Kiểm tra view tutor_slots_view
+SELECT * FROM tutor_slots_view ORDER BY tutor_name;
 
--- Xem tất cả feedback
-SELECT * FROM feedback ORDER BY feedback_id;
+-- Kiểm tra view tutor_performance
+SELECT * FROM tutor_performance ORDER BY user_id;
 
--- Xem tất cả progress_records
-SELECT * FROM progress_records ORDER BY progress_id;
-
--- Xem tất cả curriculum_frameworks
-SELECT * FROM curriculum_frameworks ORDER BY framework_id;
-
--- Xem tất cả reports
-SELECT * FROM reports ORDER BY report_id;
-
--- Xem tất cả rooms
-SELECT * FROM rooms ORDER BY room_id;
-
--- Xem tất cả notifications
-SELECT * FROM notifications ORDER BY notification_id;
-
--- Xem tất cả activity_logs
-SELECT * FROM activity_logs ORDER BY log_id;
-
--- Xem tất cả matching_suggestions
-SELECT * FROM matching_suggestions ORDER BY suggestion_id;
-
--- Xem tất cả payments
-SELECT * FROM payments ORDER BY payment_id;
--- 0. Chọn database
-USE sw_project;
-
-
-
-
-------------------------------------------------------------
--- 3. Fix các appointment bị NULL is_cancelled
-------------------------------------------------------------
-SET SQL_SAFE_UPDATES = 0;
-UPDATE appointments SET is_cancelled = 0 WHERE is_cancelled IS NULL;
-SET SQL_SAFE_UPDATES = 1;
-
-------------------------------------------------------------
--- 4. Kiểm tra availability (tùy chọn)
-------------------------------------------------------------
-SELECT * 
-FROM tutor_availability 
-WHERE tutor_id = 1 
-  AND available_date = '2025-12-06';
-
-------------------------------------------------------------
--- 5. Thêm dữ liệu mẫu cho users
-------------------------------------------------------------
-INSERT INTO users (
-    bk_net_id, email, full_name, role, 
-    faculty, major, phone_number, 
-    gpa, year_of_study, qualifications
-) VALUES
--- Tutor
-('b.tranvan', 'b.Tranvan@hcmut.edu.vn', 'Trần Văn B', 'TUTOR',
- 'Computer Science', 'Software Engineering', '0901111111',
- NULL, NULL, 'MSc in Computer Science, 5 years teaching experience'),
-
-
-
--- Student
-('a.nguyenvan', 'a.Nguyenvan@hcmut.edu.vn', 'Nguyễn Văn A', 'STUDENT',
- 'Computer Science', 'Software Engineering', '0905555555',
- 3.2, 3, NULL);
- 
-INSERT INTO tutor_expertise (tutor_id, subject_id, proficiency_level, years_of_experience, hourly_rate, is_available) VALUES
-(16,1,'EXPERT',4,23.00,true);
-
-SELECT te.tutor_id, u.full_name, s.subject_name 
-FROM tutor_expertise te
-JOIN users u ON u.user_id = te.tutor_id
-JOIN subjects s ON s.subject_id = te.subject_id;
-
-select * from users;
+select * from tutor_registrations;

@@ -19,12 +19,12 @@ const SsoLoginPage = () => {
     // ---- logic demo: route theo tài khoản ----
     // bạn giữ nguyên logic cũ của bạn nếu đã có
     if (username.startsWith("b.")) {
-      // tutor
-      login({ name: "Trần Văn B", role: "tutor" });
+      // tutor (demo) - set id to match sample DB (see dbs_Mysql.sql)
+      login({ id: 13, username: "b.tranvan", fullName: "Trần Văn B", role: "tutor" });
       navigate("/tutor/home");
     } else if (username.startsWith("a.")) {
-      // student
-      login({ name: "Nguyễn Văn A", role: "student" });
+      // student (demo) - set id to match sample DB (a.nguyenvan -> id 5)
+      login({ id: 5, username: "a.nguyenvan", fullName: "Nguyễn Văn A", role: "student" });
       navigate("/student");
     } else {
       alert("Tài khoản demo: b.tranvan / a.nguyenvan");

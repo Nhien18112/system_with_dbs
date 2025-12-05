@@ -58,7 +58,7 @@ public class TutorRegistrationController {
     }
 
     // DTO used for responses
-    public static record RegistrationDto(Long id, Integer studentId, Integer tutorId, Integer subjectId, String registrationStatus, String createdAt, String approvedAt, String reasonForRejection) {}
+    public static record RegistrationDto(Long id, Integer studentId, Integer tutorId, Integer subjectId, String registrationStatus, String createdAt, String approvedAt) {}
 
     @GetMapping("/pending-registrations")
     public ResponseEntity<?> getPendingRegistrations(@RequestParam Integer tutorId) {
@@ -66,8 +66,7 @@ public class TutorRegistrationController {
         var dtos = regs.stream().map(r -> new RegistrationDto(
                 r.getId(), r.getStudentId(), r.getTutorId(), r.getSubjectId(), r.getStatus().name(),
                 r.getRequestTime() != null ? r.getRequestTime().toString() : null,
-                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null,
-                r.getReasonForRejection()
+                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null
         )).toList();
         return ResponseEntity.ok(dtos);
     }
@@ -78,8 +77,7 @@ public class TutorRegistrationController {
         var dtos = regs.stream().map(r -> new RegistrationDto(
                 r.getId(), r.getStudentId(), r.getTutorId(), r.getSubjectId(), r.getStatus().name(),
                 r.getRequestTime() != null ? r.getRequestTime().toString() : null,
-                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null,
-                r.getReasonForRejection()
+                r.getApprovedAt() != null ? r.getApprovedAt().toString() : null
         )).toList();
         return ResponseEntity.ok(dtos);
     }

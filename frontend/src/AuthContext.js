@@ -6,9 +6,13 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
-  // Chỉ nhận username + role, không tự kiểm tra pass ở đây
-  const login = (username, role) => {
-    setUser({ username, role });
+  // login can be called with either (username, role) or a single user object
+  const login = (a, b) => {
+    if (a && typeof a === 'object') {
+      setUser(a);
+    } else {
+      setUser({ id: undefined, username: a, role: b });
+    }
   };
 
   const logout = () => {

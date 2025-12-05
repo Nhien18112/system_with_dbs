@@ -78,8 +78,13 @@ export const rejectRegistration = async (registrationId, tutorId, reason) => {
 
 // Check if student has any approved registration
 export const getStudentApprovedRegistrations = async (studentId) => {
-  const res = await apiClient.get("/api/tutor-registration/student-registrations", {
-    params: { studentId }
-  });
-  return res.data; // List of registrations for this student
+  // Backend exposes an endpoint to get the approved tutor for a student at
+  // GET /api/tutor-registration/student/{studentId}/my-tutor which returns 200 or 404.
+  try {
+    const res = await apiClient.get(`/api/tutor-registration/student/${studentId}/my-tutor`);
+    return [res.data];
+  } catch (err) {
+    if (err.response && err.response.status === 404) return [];
+    throw err;
+  }
 };

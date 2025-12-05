@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './RegisterTutor.css';
 import Vectorimg from '../../assets/Vector.png';
-import { registerTutor, cancelRegistration, suggestTutors, getStudentApprovedRegistrations } from '../../service/tutorService';
+import { registerTutor, cancelRegistration, suggestTutors, getStudentApprovedRegistrations, approveRegistration } from '../../service/tutorService';
 import { useAuth } from '../../AuthContext';
 
 export default function RegisterTutor() {
@@ -18,6 +18,9 @@ export default function RegisterTutor() {
   const [showConfirmCancelPopup, setShowConfirmCancelPopup] = useState(false);
   const [showCancelSuccessPopup, setShowCancelSuccessPopup] = useState(false);
   const [registrationId, setRegistrationId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState('');
+  const [registrationStatus, setRegistrationStatus] = useState('');
   const [hasApprovedRegistration, setHasApprovedRegistration] = useState(false);
   const [approvedTutorName, setApprovedTutorName] = useState('');
   
@@ -67,7 +70,7 @@ export default function RegisterTutor() {
         return;
       }
       const mapped = suggestions.map((s, idx) => ({
-        tutorId: s.tutorId || s.tutor_id || `t-${idx}`,
+        tutorId: s.tutorId ? Number(s.tutorId) : (s.tutor_id ? Number(s.tutor_id) : null),
         name: s.name || 'Tutor',
         rating: s.rating ?? 4.5,
         availableSlots: s.availableSlots ?? 0,
@@ -163,6 +166,46 @@ export default function RegisterTutor() {
     }
   }, [step, showCountdown]);
 
+  // central submit + approve function used by both auto and manual flows
+  const submitAndApprove = async () => {
+    if (!selectedTutor || !selectedSubjectId) return { ok: false, message: 'Vui lòng chọn môn và tutor trước khi đăng ký' };
+    if (submitting) return { ok: false, message: 'Đang xử lý, vui lòng chờ' };
+    if (!user?.id) return { ok: false, message: 'Bạn chưa đăng nhập. Vui lòng đăng nhập để hoàn tất đăng ký.' };
+    setSubmitting(true);
+    setSubmissionError('');
+      try {
+        const studentId = user?.id;
+      console.log('Submitting registration', { studentId, selectedSubjectId, tutorId: selectedTutor?.tutorId });
+      const result = await registerTutor(studentId, selectedSubjectId, selectedTutor?.tutorId);
+      console.log('Registration result:', result);
+      setRegistrationId(result?.registrationId);
+      setRegistrationStatus(result?.status || 'PENDING');
+
+      if (!result?.registrationId) {
+        setSubmissionError('No registration id returned');
+        return { ok: false, message: 'No registration id' };
+      }
+
+      // attempt to approve
+      try {
+        await approveRegistration(result.registrationId, selectedTutor?.tutorId);
+        setRegistrationStatus('APPROVED');
+        return { ok: true };
+      } catch (approveErr) {
+        console.error('Approve failed', approveErr);
+        setSubmissionError('Approve failed');
+        return { ok: false, message: 'Approve failed' };
+      }
+      } catch (err) {
+      console.error('Registration failed', err);
+      const msg = err?.response?.data?.error || err?.message || 'Lỗi khi gửi yêu cầu đăng ký';
+      setSubmissionError(msg);
+      return { ok: false, message: msg };
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   // Handle countdown timer
   useEffect(() => {
     if (showCountdown && countdown > 0) {
@@ -171,8 +214,20 @@ export default function RegisterTutor() {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (showCountdown && countdown === 0) {
-      setStep(4);
-      setShowCountdown(false);
+      // When countdown ends, auto-submit the registration if not already submitted
+      const doAutoSubmit = async () => {
+        const result = await submitAndApprove();
+        if (result.ok) {
+          setStep(4);
+        } else {
+          // keep user at step 3 and show error inline (do not auto-advance)
+          // show a friendly message and leave the user to retry (by re-entering step or reloading)
+          setSubmissionError(result.message || 'Không thể hoàn tất đăng ký');
+        }
+        setShowCountdown(false);
+      };
+
+      doAutoSubmit();
     }
   }, [showCountdown, countdown]);
 
@@ -325,6 +380,8 @@ export default function RegisterTutor() {
           <div className="info-item"><strong>Sinh viên:</strong> Nguyễn Văn A</div>
           <div className="info-item"><strong>MSSV:</strong> 123456</div>
           <div className="info-item"><strong>Tutor:</strong> {selectedTutor?.name || (tutors[0] && tutors[0].name)}</div>
+          <div className="info-item"><strong>Trạng thái:</strong> {registrationStatus || 'UNKNOWN'}</div>
+          <div className="info-item"><strong>ID Đăng ký:</strong> {registrationId || '-'}</div>
         </div>
 
         <div className="note-section">
@@ -335,27 +392,15 @@ export default function RegisterTutor() {
             Hủy trước 12 giờ để không mất slot.
           </div>
         </div>
+        {submissionError && (
+          <div style={{ marginTop: 12, color: '#b71c1c', fontWeight: '600' }}>
+            Lỗi: {submissionError}
+          </div>
+        )}
 
         <div className="confirmation-actions">
-          <button className="btn-cancel" onClick={onCancel}>Hủy đăng ký</button>
-          <button
-            className="btn-confirm"
-            onClick={async () => {
-              const studentId = user?.id || '123456';
-              console.log('📝 Registering tutor with:', { studentId, selectedSubjectId, tutorId: selectedTutor?.tutorId });
-              try {
-                const result = await registerTutor(studentId, selectedSubjectId, selectedTutor?.tutorId);
-                console.log('✅ Registration result:', result);
-                setRegistrationId(result?.registrationId);
-                setStep(4);
-              } catch (err) {
-                console.error('❌ Register tutor failed', err);
-                alert('Đăng ký thất bại — vui lòng thử lại.');
-              }
-            }}
-          >
-            Xác nhận đăng ký
-          </button>
+          <button className="btn-cancel" onClick={onCancel} disabled={submitting}>Hủy đăng ký</button>
+          {/* Manual confirm removed for auto-flow only UX */}
         </div>
       </div>
     </div>
