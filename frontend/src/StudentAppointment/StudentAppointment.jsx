@@ -66,7 +66,7 @@ const formatDateForInput = (d) => {
 
 const toLocalDateString = (d) => formatDateForInput(d);
 
-function StudentAppointment({ studentId = 1 }) {
+function StudentAppointment({ studentId = 5 }) {
   // --------- STATE CHÍNH ----------
   const [activeTab, setActiveTab] = useState("list");
 

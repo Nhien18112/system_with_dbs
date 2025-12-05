@@ -82,4 +82,7 @@ public abstract class Meeting {
     public void setOnlineLink(String onlineLink) { this.onlineLink = onlineLink; }
     public MeetingStatus getStatus() { return status; }
     public void setStatus(MeetingStatus status) { this.status = status; }
+
+    // Abstract method - subclasses must implement
+    public abstract Long getMeetingId();
 }

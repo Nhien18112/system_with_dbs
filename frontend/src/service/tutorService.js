@@ -75,3 +75,16 @@ export const rejectRegistration = async (registrationId, tutorId, reason) => {
   const res = await apiClient.post(`/api/tutor-registration/${registrationId}/reject`, { tutorId, reason });
   return res.data;
 };
+
+// Check if student has any approved registration
+export const getStudentApprovedRegistrations = async (studentId) => {
+  // Backend exposes an endpoint to get the approved tutor for a student at
+  // GET /api/tutor-registration/student/{studentId}/my-tutor which returns 200 or 404.
+  try {
+    const res = await apiClient.get(`/api/tutor-registration/student/${studentId}/my-tutor`);
+    return [res.data];
+  } catch (err) {
+    if (err.response && err.response.status === 404) return [];
+    throw err;
+  }
+};

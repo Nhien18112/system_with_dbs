@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './RegisterTutor.css';
 import Vectorimg from '../../assets/Vector.png';
-import { registerTutor, cancelRegistration, suggestTutors } from '../../service/tutorService';
+import { registerTutor, cancelRegistration, suggestTutors, getStudentApprovedRegistrations, approveRegistration } from '../../service/tutorService';
 import { useAuth } from '../../AuthContext';
 
 export default function RegisterTutor() {
@@ -18,11 +18,20 @@ export default function RegisterTutor() {
   const [showConfirmCancelPopup, setShowConfirmCancelPopup] = useState(false);
   const [showCancelSuccessPopup, setShowCancelSuccessPopup] = useState(false);
   const [registrationId, setRegistrationId] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submissionError, setSubmissionError] = useState('');
+  const [registrationStatus, setRegistrationStatus] = useState('');
+  const [hasApprovedRegistration, setHasApprovedRegistration] = useState(false);
+  const [approvedTutorName, setApprovedTutorName] = useState('');
   
 
   const [subjects, setSubjects] = useState([]);
   const [selectedSubjectId, setSelectedSubjectId] = useState(null);
-  // Lấy danh sách môn học từ BE
+  
+  // get current user from AuthContext
+  const { user } = useAuth();
+  
+  // Lấy danh sách môn học từ BE và check duplicate registration
   useEffect(() => {
     const apiBase = process.env.REACT_APP_API_URL || "http://localhost:8081";
     fetch(`${apiBase}/api/subjects`)
@@ -35,7 +44,12 @@ export default function RegisterTutor() {
         console.error('Failed to load subjects:', err);
         setSubjects([]);
       });
-  }, []);
+    
+    // Check if student already has approved registration
+    if (user?.id) {
+      checkApprovedRegistration(user.id);
+    }
+  }, [user?.id]);
 
   const onFindTutors = async () => {
     setShowSubjectDropdown(false);
@@ -56,7 +70,7 @@ export default function RegisterTutor() {
         return;
       }
       const mapped = suggestions.map((s, idx) => ({
-        tutorId: s.tutorId || s.tutor_id || `t-${idx}`,
+        tutorId: s.tutorId ? Number(s.tutorId) : (s.tutor_id ? Number(s.tutor_id) : null),
         name: s.name || 'Tutor',
         rating: s.rating ?? 4.5,
         availableSlots: s.availableSlots ?? 0,
@@ -72,6 +86,21 @@ export default function RegisterTutor() {
     } catch (err) {
       console.error('Suggest tutors API failed', err);
       alert('Lỗi khi tìm kiếm tutor. Vui lòng kiểm tra kết nối và thử lại.');
+    }
+  };
+
+  const checkApprovedRegistration = async (studentId) => {
+    try {
+      const registrations = await getStudentApprovedRegistrations(studentId);
+      if (registrations && registrations.length > 0) {
+        const approvedReg = registrations.find(r => r.status === 'APPROVED');
+        if (approvedReg) {
+          setHasApprovedRegistration(true);
+          setApprovedTutorName(approvedReg.tutorName || 'Tutor');
+        }
+      }
+    } catch (err) {
+      console.error('Failed to check approved registrations', err);
     }
   };
 
@@ -137,8 +166,45 @@ export default function RegisterTutor() {
     }
   }, [step, showCountdown]);
 
-  // get current user from AuthContext
-  const { user } = useAuth();
+  // central submit + approve function used by both auto and manual flows
+  const submitAndApprove = async () => {
+    if (!selectedTutor || !selectedSubjectId) return { ok: false, message: 'Vui lòng chọn môn và tutor trước khi đăng ký' };
+    if (submitting) return { ok: false, message: 'Đang xử lý, vui lòng chờ' };
+    if (!user?.id) return { ok: false, message: 'Bạn chưa đăng nhập. Vui lòng đăng nhập để hoàn tất đăng ký.' };
+    setSubmitting(true);
+    setSubmissionError('');
+      try {
+        const studentId = user?.id;
+      console.log('Submitting registration', { studentId, selectedSubjectId, tutorId: selectedTutor?.tutorId });
+      const result = await registerTutor(studentId, selectedSubjectId, selectedTutor?.tutorId);
+      console.log('Registration result:', result);
+      setRegistrationId(result?.registrationId);
+      setRegistrationStatus(result?.status || 'PENDING');
+
+      if (!result?.registrationId) {
+        setSubmissionError('No registration id returned');
+        return { ok: false, message: 'No registration id' };
+      }
+
+      // attempt to approve
+      try {
+        await approveRegistration(result.registrationId, selectedTutor?.tutorId);
+        setRegistrationStatus('APPROVED');
+        return { ok: true };
+      } catch (approveErr) {
+        console.error('Approve failed', approveErr);
+        setSubmissionError('Approve failed');
+        return { ok: false, message: 'Approve failed' };
+      }
+      } catch (err) {
+      console.error('Registration failed', err);
+      const msg = err?.response?.data?.error || err?.message || 'Lỗi khi gửi yêu cầu đăng ký';
+      setSubmissionError(msg);
+      return { ok: false, message: msg };
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   // Handle countdown timer
   useEffect(() => {
@@ -148,8 +214,20 @@ export default function RegisterTutor() {
       }, 1000);
       return () => clearTimeout(timer);
     } else if (showCountdown && countdown === 0) {
-      setStep(4);
-      setShowCountdown(false);
+      // When countdown ends, auto-submit the registration if not already submitted
+      const doAutoSubmit = async () => {
+        const result = await submitAndApprove();
+        if (result.ok) {
+          setStep(4);
+        } else {
+          // keep user at step 3 and show error inline (do not auto-advance)
+          // show a friendly message and leave the user to retry (by re-entering step or reloading)
+          setSubmissionError(result.message || 'Không thể hoàn tất đăng ký');
+        }
+        setShowCountdown(false);
+      };
+
+      doAutoSubmit();
     }
   }, [showCountdown, countdown]);
 
@@ -186,9 +264,21 @@ export default function RegisterTutor() {
       {step===1 && (
         <div className="card shifted">
           <h3>Đăng ký Tutor</h3>
+          {hasApprovedRegistration && (
+            <div style={{ 
+              backgroundColor: '#fff3cd', 
+              border: '1px solid #ffc107', 
+              padding: '12px', 
+              borderRadius: '4px', 
+              marginBottom: '16px',
+              color: '#856404'
+            }}>
+              <strong>Thông báo:</strong> Bạn đã có tutor ({approvedTutorName}), không thể đăng ký thêm tutor mới.
+            </div>
+          )}
           <label>Chọn môn / lĩnh vực</label>
           <div className="subject-row" style={{ position: 'relative' }}>
-            <button className="icon-arrow" title="Chọn môn" onClick={() => setShowSubjectDropdown(!showSubjectDropdown)}>
+            <button className="icon-arrow" title="Chọn môn" onClick={() => setShowSubjectDropdown(!showSubjectDropdown)} disabled={hasApprovedRegistration}>
               {subject || 'Chọn môn'} ▼
             </button>
             {showSubjectDropdown && (
@@ -202,7 +292,9 @@ export default function RegisterTutor() {
             )}
           </div>
           <div className="actions">
-            <button className="btn btn-primary" onClick={onFindTutors}>Tiếp theo</button>
+            <button className="btn btn-primary" onClick={onFindTutors} disabled={hasApprovedRegistration}>
+              {hasApprovedRegistration ? 'Bạn đã có tutor' : 'Tiếp theo'}
+            </button>
           </div>
         </div>
       )}
@@ -288,6 +380,8 @@ export default function RegisterTutor() {
           <div className="info-item"><strong>Sinh viên:</strong> Nguyễn Văn A</div>
           <div className="info-item"><strong>MSSV:</strong> 123456</div>
           <div className="info-item"><strong>Tutor:</strong> {selectedTutor?.name || (tutors[0] && tutors[0].name)}</div>
+          <div className="info-item"><strong>Trạng thái:</strong> {registrationStatus || 'UNKNOWN'}</div>
+          <div className="info-item"><strong>ID Đăng ký:</strong> {registrationId || '-'}</div>
         </div>
 
         <div className="note-section">
@@ -298,25 +392,15 @@ export default function RegisterTutor() {
             Hủy trước 12 giờ để không mất slot.
           </div>
         </div>
+        {submissionError && (
+          <div style={{ marginTop: 12, color: '#b71c1c', fontWeight: '600' }}>
+            Lỗi: {submissionError}
+          </div>
+        )}
 
         <div className="confirmation-actions">
-          <button className="btn-cancel" onClick={onCancel}>Hủy đăng ký</button>
-          <button
-            className="btn-confirm"
-            onClick={async () => {
-              const studentId = user?.id || '123456';
-              try {
-                const result = await registerTutor(studentId, selectedSubjectId, selectedTutor?.tutorId);
-                setRegistrationId(result.registrationId);
-                setStep(4);
-              } catch (err) {
-                console.error('Register tutor failed', err);
-                alert('Đăng ký thất bại — vui lòng thử lại.');
-              }
-            }}
-          >
-            Xác nhận đăng ký
-          </button>
+          <button className="btn-cancel" onClick={onCancel} disabled={submitting}>Hủy đăng ký</button>
+          {/* Manual confirm removed for auto-flow only UX */}
         </div>
       </div>
     </div>

@@ -58,8 +58,6 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         entity.setTutorId(tutorId);
         entity.setStatus(TutorRegistrationStatus.PENDING);
         entity.setRequestTime(LocalDateTime.now());
-        // Set a default expiry time (7 days from request) to satisfy NOT NULL constraint
-        entity.setExpiresAt(LocalDateTime.now().plusDays(7));
         return repository.save(entity);
     }
 
@@ -126,7 +124,6 @@ public class TutorRegistrationService implements ITutorRegistrationService {
         TutorRegistrationEntity r = opt.get();
         if (r.getTutorId() == null || !r.getTutorId().equals(tutorId)) return false;
         r.setStatus(TutorRegistrationStatus.REJECTED);
-        r.setReasonForRejection(reason);
         repository.save(r);
         return true;
     }

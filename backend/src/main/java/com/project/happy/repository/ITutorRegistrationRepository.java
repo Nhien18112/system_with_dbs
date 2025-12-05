@@ -1,12 +1,12 @@
 package com.project.happy.repository;
 
-import com.project.happy.entity.TutorRegistrationEntity;
-import com.project.happy.entity.TutorRegistrationStatus;
-
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+
+import com.project.happy.entity.TutorRegistrationEntity;
+import com.project.happy.entity.TutorRegistrationStatus;
 
 /**
  * Interface for TutorRegistration repository operations
@@ -70,4 +70,11 @@ public interface ITutorRegistrationRepository {
      * @param status status
      */
     List<TutorRegistrationEntity> findByTutorIdAndStatus(Integer tutorId, TutorRegistrationStatus status);
+
+    /**
+     * Find all registrations for a specific student
+     * @param studentId the student id
+     * @return list of registrations for the student
+     */
+    List<TutorRegistrationEntity> findByStudentId(Integer studentId);
 }
